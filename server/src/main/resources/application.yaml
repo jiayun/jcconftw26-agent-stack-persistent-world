@@ -4,6 +4,8 @@ server:
   tomcat:
     max-http-form-post-size: 2MB
 spring:
+  config:
+    import: optional:file:./.env[.properties]
   jackson:
     deserialization:
       fail-on-null-for-primitives: true
@@ -32,6 +34,7 @@ world:
   mode: ${WORLD_MODE:offline}
   model: ${WORLD_MODEL:}
   api-key: ${OPENAI_API_KEY:}
+  base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
   debug: ${WORLD_DEBUG:false}
 logging:
   level:

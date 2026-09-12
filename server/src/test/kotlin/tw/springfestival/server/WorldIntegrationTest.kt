@@ -18,7 +18,7 @@ import java.net.http.*
 import java.time.Duration
 import java.util.UUID
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = ["spring.datasource.url=jdbc:h2:mem:integration;DB_CLOSE_DELAY=-1", "spring.ai.mcp.server.enabled=true", "world.debug=true"])
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = ["spring.datasource.url=jdbc:h2:mem:integration;DB_CLOSE_DELAY=-1", "spring.ai.mcp.server.enabled=true", "world.debug=true", "world.mode=offline"])
 class WorldIntegrationTest {
     @Autowired lateinit var game: GameService
     @Autowired lateinit var tokens: ConnectionTokens

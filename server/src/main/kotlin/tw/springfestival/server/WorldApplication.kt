@@ -26,14 +26,20 @@ class WorldApplication {
         return WorldRules(raw.map { json.convertValue(it, StoryEvent::class.java) })
     }
     @Bean fun worldStore(jdbc: JdbcTemplate, manager: PlatformTransactionManager, json: ObjectMapper): WorldStore = JdbcWorldStore(jdbc, TransactionTemplate(manager), json)
-    @Bean fun storyModel(@Value("\${world.mode}") mode: String, @Value("\${world.model}") model: String, @Value("\${world.api-key}") key: String): StoryModel {
+    @Bean fun storyModel(
+        @Value("\${world.mode}") mode: String,
+        @Value("\${world.model}") model: String,
+        @Value("\${world.api-key}") key: String,
+        @Value("\${world.base-url}") baseUrl: String,
+    ): StoryModel {
         require(mode in setOf("offline", "live")) { "WORLD_MODE 必須為 offline 或 live。" }
         val characters: Map<String, Map<String, String>> = javaClass.getResourceAsStream("/content/characters.yaml").use { Yaml().load(it) }
         require(characters.keys == setOf("Elia", "Miro") && characters.values.all { it.keys.containsAll(setOf("voice", "goal", "private")) }) { "角色聖經格式不正確。" }
         val voices = characters.mapValues { it.value.getValue("voice") }
         if (mode == "offline") return SpringStoryModel(null, mode, voices)
         require(model.isNotBlank() && key.isNotBlank()) { "live 模式需要設定 WORLD_MODEL 與 OPENAI_API_KEY。" }
-        val chat = OpenAiChatModel.builder().options(OpenAiChatOptions.builder().apiKey(key).model(model).timeout(java.time.Duration.ofSeconds(40)).maxRetries(0).parallelToolCalls(false).build()).build()
+        require(baseUrl.isNotBlank()) { "live 模式需要設定 OPENAI_BASE_URL。" }
+        val chat = OpenAiChatModel.builder().options(OpenAiChatOptions.builder().baseUrl(baseUrl).apiKey(key).model(model).timeout(java.time.Duration.ofSeconds(40)).maxRetries(0).parallelToolCalls(false).build()).build()
         return SpringStoryModel(ChatClient.create(chat), mode, voices)
     }
     @Bean fun npcPlanner(): NpcPlanner = EmbabelNpcPlanner()

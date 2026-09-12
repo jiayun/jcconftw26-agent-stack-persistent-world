@@ -31,6 +31,8 @@ node_modules/
 frontend/dist/
 data/
 .env
+.env.*
+!.env.example
 .DS_Store
 !gradle/wrapper/gradle-wrapper.jar
 .idea/
