@@ -1,0 +1,53 @@
+# 一次輸入如何成為世界的一部分
+
+## 先保存請求，再執行回合
+
+HTTP 與 MCP 都轉成 `TurnCommand`。`GameService.submit` 先驗證 text／suggestionId 擇一，再由 `JdbcWorldStore.accept` 鎖定存檔列：同 request ID、同內容回傳原回合；同 ID 不同內容、過期 revision、同存檔另一個未完成回合回傳衝突。請求交易完成後才排入虛擬執行緒，adapter 立即回傳 turn ID。
+
+程序重啟時，`recover` 掃描 ACCEPTED 與 COMMITTED。ACCEPTED 由已保存命令重新執行；COMMITTED 只補演出。執行緒內集合只用於避免本程序重複排程，不是世界的真相來源。
+
+## Koog 控制分支
+
+`KoogTurnWorkflow` 使用 Koog 1.2.0 的 `strategy`、自訂 `node` 及條件 edge，實際以 `GraphAIAgent.run` 執行。
+
+1. 讀取已提交世界與玩家可見記憶。
+2. Spring AI 理解輸入；模糊意圖走 clarification edge，跳過 planner 與世界裁決。
+3. Embabel 根據 revision 與角色可見條件規劃三類目標。
+4. `WorldRules.resolve` 只接受目前事件的合法 branch、移動、休息與受限聊天記憶。
+5. 交易提交世界文件、事件／日誌、技能證據、驗證過的記憶、計畫及狀態差異。
+6. 根據已提交結果演出。多角色各取自己的記憶，分別呼叫 Spring AI，共用預算。
+7. 失敗走 author-fallback edge。保存 `TurnResult` 後，HTTP／MCP 輪詢才回傳完整結果。
+
+Koog 不直接建立模型客戶端。它的 executor 在有人繞過 Spring AI 呼叫模型時立即失敗。沒有採用 beta starter、Koog planner 或外部 durable workflow。
+
+## Embabel 真正選路
+
+`EmbabelNpcPlanner` 透過 `DefaultPlannerFactory` 建立正式 GOAP planner，交給它 action 集合、preconditions、effects、cost 與目標。
+
+- 旅行：橋路檢查，或詢問渡船再提案；不可行時提出延期。
+- 調查：開館時查舊圖並比對；夜間訪問守燈人再檢查設備。
+- 春祭：已知真相時準備工具與修復提案；沒有知識時尋求助手並規劃協作。
+
+程式的分支只選「目標的 action 集合」，完整路徑由 planner 搜尋。測試比對真實 actions。`NpcPlan` 保存來源 revision、條件、action IDs 與下一步。Domain 再檢查 revision 與目前合法性，每個 NPC 每次推進最多保存一項自己的活動；提案不會替玩家取得物品或接受旅行。
+
+## Spring AI 理解與演出
+
+Spring AI 2.0.1 的 ChatClient、ChatModel 與 BeanOutputConverter 統一模型邊界。live 使用 OpenAI provider；離線 ChatModel 確實經過 typed output，再以作者文字呈現。模型只回傳 `PlayerIntent`、偏好候選與 `NarrativeDraft`，不接受 patch。
+
+偏好候選必須是玩家本回合完整原文、以「我喜歡」開頭且長度受限，domain 才會保存；不能由模型推論新的承諾或物品。模型另可動態呼叫 `read_public_scene`、`read_known_memories` 與 `read_known_events`。這些 Spring AI tools 在註冊之前就完成角色過濾，沒有任何寫入操作或視角覆寫參數；每次執行都通過 `TurnBudget.tool()`。理解階段只提供公開場景，演出階段才加入各角色可見記憶。
+
+總預算 45 秒、最多六次模型請求與三次唯讀工具，每階段最多兩次嘗試；SDK 關閉隱式重試。每次呼叫受剩餘總時間限制。BudgetAdvisor 位於工具迴圈內的模型前方，工具續呼叫也計入六次限制。Schema 只保證結構；自然語言一致性仍須真實模型評估。重要世界事實另由 UI 顯示。
+
+## 記憶與持久化
+
+五層記憶共用具來源 ID、knownBy、importance、pinned 與 correction 的資料型別。WORKING 最近八筆；其他非固定記憶合計最多一百筆，重要承諾獨立保留。查詢先過濾角色權限，再以文字匹配、重要性與承諾權重排序，最多六筆。向量搜尋未納入本版。
+
+`World` 是同一存檔交易的一致性邊界，存為 H2 CLOB JSON snapshot；世界內的角色、關係、技能、事件、故事線及五層記憶一起更新。關聯表另保存 durable turns、前後狀態差異與權杖。這避免在 MVP 為每個子系統建立大量 JOIN，但大型存檔會增加序列化成本。
+
+`world_changes` 保存每回合前後 revision 與完整狀態。已提交回合有結果快照，之後查舊回合不會冒充最新世界。記憶編輯會增加 revision，且禁止與未完成回合交錯。
+
+## 兩個入站 adapter
+
+Web 可管理本機存檔與 MCP 連線。MCP 只暴露五工具。Filter 在每個 HTTP 請求驗證 Bearer hash，再將伺服器決定的 save ID 放進 MCP transport context；不是依賴 ThreadLocal，也不信任工具參數的存檔身分。每個工具依 context 限定查詢；回傳結果移除 developer trace 與原始 outcome。
+
+loopback Host 與同源 Origin 檢查阻擋網頁跨站寫入。權杖只顯示一次、資料庫只留 SHA-256、可以撤銷。設定與工具記錄不包含權杖。

@@ -1,0 +1,981 @@
+- id: arrival
+  category: main
+  title: 一盞替你留的燈
+  place: INN
+  text: 旅館門鈴叮了一聲。Elia 從帳本後抬頭：「房間不大，窗外的河倒是很大。你喝什麼？」
+  branches:
+  - id: tea
+    label: 點一杯不加糖的茶
+    text: Elia 把糖罐推遠：「好，記住了。河景免費，續杯再說。」
+    flags:
+    - tea
+    character: Elia
+    trust: 1
+    memory: 初到旅館，你選了無糖茶；Elia 說河景免費。
+    layer: SEMANTIC
+  - id: soup
+    label: 問有沒有熱湯
+    text: Elia 端來一碗湯：「晚到的人也有晚餐。這條規矩是我訂的。」
+    flags:
+    - soup
+    character: Elia
+    trust: 1
+    memory: 第一晚，Elia 為你留了熱湯。
+  chapter: 0
+  advanceChapter: true
+  priority: 100
+  hooks:
+  - promise
+  participants:
+  - Elia
+- id: promise
+  category: main
+  title: 北方的約定
+  place: BRIDGE
+  text: 舊橋的星燈亮了又暗。Elia 說她從沒看過北方星燈台的日出，接著補上一句：「我只是順口說說。」
+  branches:
+  - id: 'yes'
+    label: 春祭結束後，一起去吧
+    text: 「那就說好了。」Elia 看著水面，像在確認倒影有沒有偷笑。你們約定春祭後一起去北方。
+    flags:
+    - promise
+    character: Elia
+    trust: 2
+    closeness: 2
+    memory: 你與 Elia 約定春祭結束後一起去北方。路線可以再商量。
+    layer: RELATIONSHIP
+    pinned: true
+  - id: maybe
+    label: 先把春祭做好，再一起商量
+    text: Elia 點頭：「一起商量也很好。」你沒有承諾出發日期，但願意陪她完成眼前的事。
+    flags:
+    - considering
+    character: Elia
+    trust: 1
+    memory: 你願意與 Elia 在春祭後一起商量旅行，尚未承諾出發。
+    layer: RELATIONSHIP
+    pinned: true
+  chapter: 1
+  advanceChapter: true
+  priority: 100
+  hooks:
+  - anomaly
+  participants:
+  - Elia
+- id: anomaly
+  category: main
+  title: 亮錯拍子的星燈
+  place: MARKET
+  text: Miro 舉著兩張配置圖，額頭沾著顏料：「昨天還好好的，今天卻像在打嗝！」新燈架排成了從前沒有的環形。
+  branches:
+  - id: observe
+    label: 觀察閃爍與新燈架的位置
+    text: 你發現每次外圈同時亮起，舊燈便會暗下。Miro 把這個規律記在圖上。
+    flags:
+    - anomaly
+    - pattern
+    skill: observation
+    memory: 你與 Miro 發現外圈亮起時，舊星燈會暗下。
+    layer: STORY
+  - id: listen
+    label: 先聽 Miro 說今年改了什麼
+    text: 今年增加了環形燈架，舊設備沒有換過。Miro 決定帶你去找舊圖與值班人的紀錄。
+    flags:
+    - anomaly
+    - witness
+    character: Miro
+    trust: 2
+    memory: Miro 告訴你今年新增環形燈架，舊設備仍沿用。
+    layer: STORY
+  chapter: 2
+  advanceChapter: true
+  priority: 100
+  lockedFacts:
+  - 異常源於舊設施與新配置不相容
+  hooks:
+  - closure
+  participants:
+  - Miro
+- id: closure
+  category: main
+  title: 橋上的紅繩
+  place: BRIDGE
+  text: 北橋入口拉起紅繩。管理員說橋面要修繕，春祭期間不能通行。Elia 摺起畫到一半的路線圖。
+  branches:
+  - id: ferry
+    label: 去渡口查船班
+    text: 你們決定先查渡船資訊。這還不是船票，也沒有替任何人答應出發。
+    flags:
+    - bridgeClosed
+    memory: 北橋封閉後，你們改查渡船方案。
+    layer: STORY
+  - id: delay
+    label: 把延期也當成認真的選項
+    text: Elia 鬆了口氣：「那我們不用為了守約，把自己丟進河裡。」延期成為可以一起選擇的安排。
+    flags:
+    - bridgeClosed
+    - delayDiscussed
+    character: Elia
+    trust: 1
+    memory: 你們同意：一起延期也可以是守約的一種方式。
+    layer: RELATIONSHIP
+    pinned: true
+  chapter: 3
+  advanceChapter: true
+  priority: 100
+  hooks:
+  - festival
+  participants:
+  - Elia
+- id: festival
+  category: main
+  title: 春祭亮起的時候
+  place: MARKET
+  text: 燈架前空出一小塊工作區。Miro 捲起袖子，Elia 等你說出安排。茶書屋的知識，或朋友們的協作，都能派上用場。
+  branches:
+  - id: repair
+    label: 依照舊圖分流修復星燈
+    text: 你把新環形燈架分成兩組，依舊設施能承受的節奏交替點亮。Miro 小心核對每條線。春祭的燈終於穩穩亮起。
+    require:
+    - truth
+    flags:
+    - festivalDone
+    - knowledgeEnding
+    skill: folkMagic
+    character: Miro
+    trust: 2
+    memory: 你們運用配置不相容的調查結果，分流修復星燈，完成春祭。
+    layer: STORY
+    pinned: true
+  - id: cooperate
+    label: 和大家分區點燈，完成替代安排
+    text: 你與 Elia 分配各區值班，Miro 指揮手持燈隊接續光線。舊設備暫停接入新環線，春祭以大家的合作完成。
+    require:
+    - allies
+    flags:
+    - festivalDone
+    - cooperationEnding
+    character: Elia
+    closeness: 2
+    memory: 你們與市集夥伴分區點燈，用合作完成春祭。
+    layer: STORY
+    pinned: true
+  chapter: 4
+  advanceChapter: true
+  priority: 100
+  hooks:
+  - departure
+  participants:
+  - Elia
+  - Miro
+- id: departure
+  category: main
+  title: 把以後說成我們
+  place: DOCK
+  text: 春祭的聲音留在身後。Elia 沒有催你，只把路線圖攤在膝上。你們可以去北方，也可以一起留下新的日期。
+  branches:
+  - id: depart
+    label: 拿著船票，一起前往北方
+    text: 渡船穩穩離岸。Elia 笑著問北方有沒有免費河景。你們抵達北方星燈台，把新的一天看了很久。
+    require:
+    - ticket
+    flags:
+    - journeyDone
+    character: Elia
+    closeness: 2
+    memory: 春祭結束後，你與 Elia 搭船抵達北方星燈台。
+    layer: RELATIONSHIP
+    pinned: true
+    ending: departed
+  - id: postpone
+    label: 一起延期，約好下次再出發
+    text: 你們在圖上畫了一個空白方框，留給以後的日期。Elia 說：「下次也要一起商量。」約定仍在，今天也值得過。
+    flags:
+    - journeyDeferred
+    character: Elia
+    trust: 2
+    memory: 你與 Elia 一起決定延期北方旅行；約定仍然保留。
+    layer: RELATIONSHIP
+    pinned: true
+    ending: postponed
+  chapter: 5
+  advanceChapter: true
+  priority: 100
+  participants:
+  - Elia
+- id: elia_recipe
+  category: character
+  title: 旅館的鹽罐
+  place: INN
+  text: Elia 不小心把鹽罐標成糖。她要求你替這件事取個不太丟臉的名字。
+  branches:
+  - id: help
+    label: 稱它為河風調味
+    text: 你們把小失誤叫作河風調味。Elia 說這個笑話只准在廚房說。
+    character: Elia
+    trust: 1
+    closeness: 1
+    memory: 你們把小失誤叫作河風調味。Elia 說這個笑話只准在廚房說。
+    flags:
+    - joke
+    skill: cooking
+  - id: listen
+    label: 先聽他把話說完
+    text: Elia 慢慢說完了。你記住這件小事，沒有急著給答案。
+    character: Elia
+    trust: 1
+    memory: Elia 不小心把鹽罐標成糖。她要求你替這件事取個不太丟臉的名字。
+  minChapter: 1
+  priority: 35
+  participants:
+  - Elia
+- id: elia_boxes
+  category: character
+  title: 還沒收好的紙箱
+  place: INN
+  text: 樓梯下有個寫著北方的紙箱，裡面只有一雙襪子。
+  branches:
+  - id: help
+    label: 幫她挑一件想帶走的東西
+    text: Elia 選了母親留下的茶匙，說旅館的工作會先交接好。
+    character: Elia
+    trust: 1
+    closeness: 1
+    memory: Elia 選了母親留下的茶匙，說旅館的工作會先交接好。
+    flags: []
+  - id: listen
+    label: 先聽他把話說完
+    text: Elia 慢慢說完了。你記住這件小事，沒有急著給答案。
+    character: Elia
+    trust: 1
+    memory: 樓梯下有個寫著北方的紙箱，裡面只有一雙襪子。
+  minChapter: 1
+  priority: 35
+  participants:
+  - Elia
+- id: elia_ribbon
+  category: character
+  title: 不對稱的緞帶
+  place: MARKET
+  text: Elia 正把每個攤位的緞帶綁成同樣高度，卻忘了自己頭上的。
+  branches:
+  - id: help
+    label: 一起整理緞帶並安排值班
+    text: 你們逐攤確認點燈人手。攤主答應配合分區安排，Elia 終於肯坐下喝水。
+    character: Elia
+    trust: 1
+    closeness: 1
+    memory: 你們逐攤確認點燈人手。攤主答應配合分區安排，Elia 終於肯坐下喝水。
+    flags:
+    - allies
+  - id: listen
+    label: 先聽他把話說完
+    text: Elia 慢慢說完了。你記住這件小事，沒有急著給答案。
+    character: Elia
+    trust: 1
+    memory: Elia 正把每個攤位的緞帶綁成同樣高度，卻忘了自己頭上的。
+  minChapter: 1
+  priority: 35
+  participants:
+  - Elia
+- id: elia_rain
+  category: character
+  title: 雨棚下的一小步
+  place: BRIDGE
+  text: 雨水沿著棚緣落下。Elia 坦白自己也怕離開熟悉的地方。
+  branches:
+  - id: help
+    label: 告訴她可以慢慢來
+    text: 你們站著等雨變小。Elia 不用立刻勇敢，也不用立刻回答。
+    character: Elia
+    trust: 1
+    closeness: 1
+    memory: 你們站著等雨變小。Elia 不用立刻勇敢，也不用立刻回答。
+    flags: []
+  - id: listen
+    label: 先聽他把話說完
+    text: Elia 慢慢說完了。你記住這件小事，沒有急著給答案。
+    character: Elia
+    trust: 1
+    memory: 雨水沿著棚緣落下。Elia 坦白自己也怕離開熟悉的地方。
+  minChapter: 1
+  priority: 35
+  participants:
+  - Elia
+- id: elia_letter
+  category: character
+  title: 沒有寄出的信
+  place: TEAHOUSE
+  text: Elia 想寫信告訴旅館老闆她的旅行打算，第一行擦了三次。
+  branches:
+  - id: help
+    label: 陪她把交接事項寫清楚
+    text: 信上留下值班表與可討論的日期。她把信收好，決定親自交給老闆。
+    character: Elia
+    trust: 1
+    closeness: 1
+    memory: 信上留下值班表與可討論的日期。她把信收好，決定親自交給老闆。
+    flags: []
+  - id: listen
+    label: 先聽他把話說完
+    text: Elia 慢慢說完了。你記住這件小事，沒有急著給答案。
+    character: Elia
+    trust: 1
+    memory: Elia 想寫信告訴旅館老闆她的旅行打算，第一行擦了三次。
+  minChapter: 1
+  priority: 35
+  participants:
+  - Elia
+- id: miro_archive
+  category: character
+  title: 被茶漬蓋住的旧圖
+  place: TEAHOUSE
+  text: Miro 在舊圖旁找到設備負載的註記，今年的環線超出了原先設計。
+  branches:
+  - id: help
+    label: 比對舊設施與今年配置
+    text: 你們確認異常原因是舊星燈設施與今年祭典配置不相容，分流便能避免同時負載。
+    character: Miro
+    trust: 1
+    closeness: 1
+    memory: 你們確認異常原因是舊星燈設施與今年祭典配置不相容，分流便能避免同時負載。
+    flags:
+    - truth
+    skill: folkMagic
+  - id: listen
+    label: 先聽他把話說完
+    text: Miro 慢慢說完了。你記住這件小事，沒有急著給答案。
+    character: Miro
+    trust: 1
+    memory: Miro 在舊圖旁找到設備負載的註記，今年的環線超出了原先設計。
+  minChapter: 3
+  priority: 35
+  participants:
+  - Miro
+- id: miro_bell
+  category: character
+  title: 比祭典還早的鈴聲
+  place: MARKET
+  text: Miro 打算用十二面鑼宣布一場小小的工作會議。
+  branches:
+  - id: help
+    label: 把會議改成一杯茶的長度
+    text: 大家願意留下討論分區點燈。Miro 只敲了一面鑼，覺得已經十分克制。
+    character: Miro
+    trust: 1
+    closeness: 1
+    memory: 大家願意留下討論分區點燈。Miro 只敲了一面鑼，覺得已經十分克制。
+    flags:
+    - allies
+  - id: listen
+    label: 先聽他把話說完
+    text: Miro 慢慢說完了。你記住這件小事，沒有急著給答案。
+    character: Miro
+    trust: 1
+    memory: Miro 打算用十二面鑼宣布一場小小的工作會議。
+  minChapter: 1
+  priority: 35
+  participants:
+  - Miro
+- id: miro_witness
+  category: character
+  title: 守燈人的筆記
+  place: BRIDGE
+  text: 守燈人記下每次熄滅的時間，恰好和新環線啟動時間相同。
+  branches:
+  - id: help
+    label: 把時間與配置圖對照
+    text: Miro 從紀錄確認舊設施與新配置不相容，不是有人作亂。
+    character: Miro
+    trust: 1
+    closeness: 1
+    memory: Miro 從紀錄確認舊設施與新配置不相容，不是有人作亂。
+    flags:
+    - truth
+    skill: observation
+  - id: listen
+    label: 先聽他把話說完
+    text: Miro 慢慢說完了。你記住這件小事，沒有急著給答案。
+    character: Miro
+    trust: 1
+    memory: 守燈人記下每次熄滅的時間，恰好和新環線啟動時間相同。
+  minChapter: 3
+  priority: 35
+  participants:
+  - Miro
+- id: miro_boat
+  category: character
+  title: 被風吹跑的船班表
+  place: DOCK
+  text: Miro 用石頭壓著船班表，堅持石頭也該有正式職稱。
+  branches:
+  - id: help
+    label: 向船家查班次並正式訂票
+    text: 船家確認春祭後有可用的渡船。你完成訂位並領到船票，Miro 把石頭升任副船長。
+    character: Miro
+    trust: 1
+    closeness: 1
+    memory: 船家確認春祭後有可用的渡船。你完成訂位並領到船票，Miro 把石頭升任副船長。
+    flags:
+    - ticket
+  - id: listen
+    label: 先聽他把話說完
+    text: Miro 慢慢說完了。你記住這件小事，沒有急著給答案。
+    character: Miro
+    trust: 1
+    memory: Miro 用石頭壓著船班表，堅持石頭也該有正式職稱。
+  minChapter: 1
+  priority: 110
+  exclude:
+  - ticket
+  participants:
+  - Miro
+- id: miro_stars
+  category: character
+  title: 故事裡多出來的星星
+  place: LIGHTHOUSE
+  text: Miro 的地方掌故總比星圖多一顆星。這回他承認是自己添的。
+  branches:
+  - id: help
+    label: 請他分清紀錄與想像
+    text: 你們把真的星圖與好笑的故事分開記錄。想像可以陪伴事實，不必取代它。
+    character: Miro
+    trust: 1
+    closeness: 1
+    memory: 你們把真的星圖與好笑的故事分開記錄。想像可以陪伴事實，不必取代它。
+    flags: []
+    skill: observation
+  - id: listen
+    label: 先聽他把話說完
+    text: Miro 慢慢說完了。你記住這件小事，沒有急著給答案。
+    character: Miro
+    trust: 1
+    memory: Miro 的地方掌故總比星圖多一顆星。這回他承認是自己添的。
+  minChapter: 1
+  priority: 35
+  participants:
+  - Miro
+- id: breakfast
+  category: life
+  title: 焦邊的早餐
+  place: INN
+  text: 煎餅邊緣焦了一點，香味卻很有精神。
+  branches:
+  - id: try
+    label: 把火轉小，做第二份
+    text: 你學會在麵糊邊緣冒泡時翻面。
+    skill: cooking
+    memory: 你學會在麵糊邊緣冒泡時翻面。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 煎餅邊緣焦了一點，香味卻很有精神。
+  priority: 15
+  participants: []
+- id: jam
+  category: life
+  title: 最後一匙莓果醬
+  place: INN
+  text: 兩張桌子都想要最後一匙果醬。
+  branches:
+  - id: try
+    label: 用熱水調成兩杯果茶
+    text: 兩桌客人端起果茶，誰也沒有被漏掉。
+    skill: cooking
+    memory: 兩桌客人端起果茶，誰也沒有被漏掉。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 兩張桌子都想要最後一匙果醬。
+  priority: 15
+  participants: []
+- id: supper
+  category: life
+  title: 把剩菜變成晚餐
+  place: INN
+  text: 春祭工作剩下半鍋蔬菜與幾個空碗。
+  branches:
+  - id: try
+    label: 煮一鍋分享的湯
+    text: 一鍋湯讓忙碌的人都坐了下來。
+    skill: cooking
+    memory: 一鍋湯讓忙碌的人都坐了下來。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 春祭工作剩下半鍋蔬菜與幾個空碗。
+  priority: 15
+  participants: []
+- id: basket
+  category: life
+  title: 倒過來的菜籃
+  place: MARKET
+  text: 菜籃翻了，圓滾滾的豆莢正往斜坡跑。
+  branches:
+  - id: try
+    label: 幫攤主重新分類
+    text: 你認出熟度不同的豆莢，換到一張備料小抄。
+    skill: cooking
+    memory: 你認出熟度不同的豆莢，換到一張備料小抄。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 菜籃翻了，圓滾滾的豆莢正往斜坡跑。
+  priority: 15
+  participants: []
+- id: steam
+  category: life
+  title: 蒸籠裡的雲
+  place: MARKET
+  text: 點心攤的蒸氣遮住了價格牌。
+  branches:
+  - id: try
+    label: 留意蒸籠的火候
+    text: 你從蒸氣變化找到起鍋時間。
+    skill: cooking
+    memory: 你從蒸氣變化找到起鍋時間。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 點心攤的蒸氣遮住了價格牌。
+  priority: 15
+  participants: []
+- id: shadows
+  category: life
+  title: 橋柱的影子
+  place: BRIDGE
+  text: 石橋的影子與昨天看的位置不同。
+  branches:
+  - id: try
+    label: 標下水位與影子
+    text: 你辨認出水位標記，知道河面平靜也會緩緩變化。
+    skill: observation
+    memory: 你辨認出水位標記，知道河面平靜也會緩緩變化。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 石橋的影子與昨天看的位置不同。
+  priority: 15
+  participants: []
+- id: cats
+  category: life
+  title: 貓替誰值班
+  place: INN
+  text: 旅館的貓睡在帳本上，尾巴指向待辦清單。
+  branches:
+  - id: try
+    label: 觀察牠每天選的位置
+    text: 原來窗邊的日光才是牠真正的班表。
+    skill: observation
+    memory: 原來窗邊的日光才是牠真正的班表。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 旅館的貓睡在帳本上，尾巴指向待辦清單。
+  priority: 15
+  participants: []
+- id: prints
+  category: life
+  title: 木板上的腳印
+  place: DOCK
+  text: 渡口有深淺不同的濕腳印。
+  branches:
+  - id: try
+    label: 沿著腳印找漏水的水桶
+    text: 你替船家找到破桶，保住了原本要送去市集的清水。
+    skill: observation
+    memory: 你替船家找到破桶，保住了原本要送去市集的清水。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 渡口有深淺不同的濕腳印。
+  priority: 15
+  participants: []
+- id: ink
+  category: life
+  title: 褪色的邊註
+  place: TEAHOUSE
+  text: 同一本地方誌有兩種筆跡。
+  branches:
+  - id: try
+    label: 分辨原文與後人補記
+    text: 你學會先核對來源，再把故事當成證據。
+    skill: observation
+    memory: 你學會先核對來源，再把故事當成證據。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 同一本地方誌有兩種筆跡。
+  priority: 15
+  participants: []
+- id: paper
+  category: life
+  title: 折紙燈的稜角
+  place: TEAHOUSE
+  text: 紙燈折歪了一角，亮光卻形成漂亮的菱形。
+  branches:
+  - id: try
+    label: 重新分配符紋的間隔
+    text: 紙燈穩穩發光，你記下符紋需要保留間距。
+    skill: folkMagic
+    memory: 紙燈穩穩發光，你記下符紋需要保留間距。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 紙燈折歪了一角，亮光卻形成漂亮的菱形。
+  priority: 15
+  participants: []
+- id: charms
+  category: life
+  title: 不肯發亮的小符
+  place: MARKET
+  text: 小孩的小符卡住了兩根線。
+  branches:
+  - id: try
+    label: 鬆開線結再試一次
+    text: 符紋重新亮起，孩子認真向線結道謝。
+    skill: folkMagic
+    memory: 符紋重新亮起，孩子認真向線結道謝。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 小孩的小符卡住了兩根線。
+  priority: 15
+  participants: []
+- id: echo
+  category: life
+  title: 石縫裡的回音
+  place: BRIDGE
+  text: 橋下有一小段聲音總是晚半拍。
+  branches:
+  - id: try
+    label: 比較兩側符紋的節奏
+    text: 你發現交替節奏能讓光線保持穩定。
+    skill: folkMagic
+    memory: 你發現交替節奏能讓光線保持穩定。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 橋下有一小段聲音總是晚半拍。
+  priority: 15
+  participants: []
+- id: buoy
+  category: life
+  title: 浮標上的微光
+  place: DOCK
+  text: 浮標的符紋被水草蓋住。
+  branches:
+  - id: try
+    label: 清理並重新描好符紋
+    text: 船家能在夜裡看清靠岸的位置。
+    skill: folkMagic
+    memory: 船家能在夜裡看清靠岸的位置。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 浮標的符紋被水草蓋住。
+  priority: 15
+  participants: []
+- id: shelves
+  category: life
+  title: 一格留給未知
+  place: TEAHOUSE
+  text: 茶書屋新書架留了一個空格。
+  branches:
+  - id: try
+    label: 寫下尚未找到答案的問題
+    text: 店主把你的紙卡放進空格，說問題也需要住所。
+    skill: observation
+    memory: 店主把你的紙卡放進空格，說問題也需要住所。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 茶書屋新書架留了一個空格。
+  priority: 15
+  participants: []
+- id: breakwater
+  category: life
+  title: 風裡的一口熱茶
+  place: LIGHTHOUSE
+  text: 北方的風讓茶比想像中涼得快。
+  branches:
+  - id: try
+    label: 用掌心護住杯沿
+    text: 你與同伴分享一壺茶，讓看風景也有了溫度。
+    skill: cooking
+    memory: 你與同伴分享一壺茶，讓看風景也有了溫度。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 北方的風讓茶比想像中涼得快。
+  priority: 15
+  participants: []
+- id: lens
+  category: life
+  title: 鏡片上的晨霧
+  place: LIGHTHOUSE
+  text: 星燈台鏡片蒙上一層薄霧。
+  branches:
+  - id: try
+    label: 沿著既有標記擦亮鏡片
+    text: 晨光重新落在刻度上，你看見工匠留下的耐心。
+    skill: folkMagic
+    memory: 晨光重新落在刻度上，你看見工匠留下的耐心。
+  - id: watch
+    label: 留一點時間靜靜看著
+    text: 你在這個小地方停了一會兒，記住了今天的光。
+    memory: 星燈台鏡片蒙上一層薄霧。
+  priority: 15
+  participants: []
+- id: recall_tea
+  category: memory
+  title: 記得的味道
+  place: INN
+  text: Elia 沒有再問，便把糖罐移開。那杯茶還是你第一晚選的味道。
+  branches:
+  - id: remember
+    label: 一起回想那一天
+    text: Elia 沒有再問，便把糖罐移開。那杯茶還是你第一晚選的味道。
+    character: Elia
+    closeness: 1
+    memory: Elia 沒有再問，便把糖罐移開。那杯茶還是你第一晚選的味道。
+    layer: RELATIONSHIP
+  - id: today
+    label: 把話題接到今天
+    text: 你們讓過去留在心裡，也給今天留一點位置。
+    character: Elia
+    trust: 1
+    memory: 你們回想舊事後，一起聊了今天。
+  require:
+  - tea
+  priority: 45
+  minChapter: 2
+  participants:
+  - Elia
+- id: recall_soup
+  category: memory
+  title: 再留一碗湯
+  place: INN
+  text: 爐上留著一碗熱湯，像你剛來的那晚。
+  branches:
+  - id: remember
+    label: 一起回想那一天
+    text: 爐上留著一碗熱湯，像你剛來的那晚。
+    character: Elia
+    closeness: 1
+    memory: 爐上留著一碗熱湯，像你剛來的那晚。
+    layer: RELATIONSHIP
+  - id: today
+    label: 把話題接到今天
+    text: 你們讓過去留在心裡，也給今天留一點位置。
+    character: Elia
+    trust: 1
+    memory: 你們回想舊事後，一起聊了今天。
+  require:
+  - soup
+  priority: 45
+  minChapter: 2
+  participants:
+  - Elia
+- id: recall_joke
+  category: memory
+  title: 河風調味
+  place: MARKET
+  text: Elia 嘗了一口湯，嚴肅宣布今天河風很強。你們都笑了。
+  branches:
+  - id: remember
+    label: 一起回想那一天
+    text: Elia 嘗了一口湯，嚴肅宣布今天河風很強。你們都笑了。
+    character: Elia
+    closeness: 1
+    memory: Elia 嘗了一口湯，嚴肅宣布今天河風很強。你們都笑了。
+    layer: RELATIONSHIP
+  - id: today
+    label: 把話題接到今天
+    text: 你們讓過去留在心裡，也給今天留一點位置。
+    character: Elia
+    trust: 1
+    memory: 你們回想舊事後，一起聊了今天。
+  require:
+  - joke
+  priority: 45
+  minChapter: 2
+  participants:
+  - Elia
+- id: recall_promise
+  category: memory
+  title: 紅繩之外的約定
+  place: BRIDGE
+  text: Elia 摸了摸路線圖：「路會變，答應一起商量的事不會。」
+  branches:
+  - id: remember
+    label: 一起回想那一天
+    text: Elia 摸了摸路線圖：「路會變，答應一起商量的事不會。」
+    character: Elia
+    closeness: 1
+    memory: Elia 摸了摸路線圖：「路會變，答應一起商量的事不會。」
+    layer: RELATIONSHIP
+  - id: today
+    label: 把話題接到今天
+    text: 你們讓過去留在心裡，也給今天留一點位置。
+    character: Elia
+    trust: 1
+    memory: 你們回想舊事後，一起聊了今天。
+  require:
+  - promise
+  priority: 45
+  minChapter: 2
+  participants:
+  - Elia
+- id: recall_lights
+  category: memory
+  title: 圖上的指印
+  place: TEAHOUSE
+  text: 舊圖上留下你們忙碌時的指印。那是完成春祭的證據。
+  branches:
+  - id: remember
+    label: 一起回想那一天
+    text: 舊圖上留下你們忙碌時的指印。那是完成春祭的證據。
+    character: Elia
+    closeness: 1
+    memory: 舊圖上留下你們忙碌時的指印。那是完成春祭的證據。
+    layer: RELATIONSHIP
+  - id: today
+    label: 把話題接到今天
+    text: 你們讓過去留在心裡，也給今天留一點位置。
+    character: Elia
+    trust: 1
+    memory: 你們回想舊事後，一起聊了今天。
+  require:
+  - festivalDone
+  priority: 45
+  minChapter: 2
+  participants:
+  - Elia
+- id: recall_after
+  category: memory
+  title: 給以後的空格
+  place: DOCK
+  text: Elia 帶來還沒填日期的路線圖，問你想不想再聊聊。
+  branches:
+  - id: remember
+    label: 一起回想那一天
+    text: Elia 帶來還沒填日期的路線圖，問你想不想再聊聊。
+    character: Elia
+    closeness: 1
+    memory: Elia 帶來還沒填日期的路線圖，問你想不想再聊聊。
+    layer: RELATIONSHIP
+  - id: today
+    label: 把話題接到今天
+    text: 你們讓過去留在心裡，也給今天留一點位置。
+    character: Elia
+    trust: 1
+    memory: 你們回想舊事後，一起聊了今天。
+  require:
+  - journeyDeferred
+  priority: 45
+  minChapter: 2
+  participants:
+  - Elia
+- id: river
+  category: atmosphere
+  title: 河水替人留白
+  place: BRIDGE
+  text: 河面把星燈的光拉得很長。
+  branches:
+  - id: stay
+    label: 多待一會兒
+    text: 河面把星燈的光拉得很長。
+  - id: note
+    label: 把此刻記下來
+    text: 你在日誌留下一行：河面把星燈的光拉得很長。
+    memory: 河面把星燈的光拉得很長。
+  once: false
+  cooldown: 9
+  priority: 0
+  participants: []
+- id: pages
+  category: atmosphere
+  title: 翻頁與雨聲
+  place: TEAHOUSE
+  text: 茶書屋有人翻過一頁，窗外的雨也停了一拍。
+  branches:
+  - id: stay
+    label: 多待一會兒
+    text: 茶書屋有人翻過一頁，窗外的雨也停了一拍。
+  - id: note
+    label: 把此刻記下來
+    text: 你在日誌留下一行：茶書屋有人翻過一頁，窗外的雨也停了一拍。
+    memory: 茶書屋有人翻過一頁，窗外的雨也停了一拍。
+  once: false
+  cooldown: 9
+  priority: 0
+  participants: []
+- id: dawn
+  category: atmosphere
+  title: 醒得比鬧鐘早
+  place: INN
+  text: 走廊還很安靜，廚房已經傳來熱水聲。
+  branches:
+  - id: stay
+    label: 多待一會兒
+    text: 走廊還很安靜，廚房已經傳來熱水聲。
+  - id: note
+    label: 把此刻記下來
+    text: 你在日誌留下一行：走廊還很安靜，廚房已經傳來熱水聲。
+    memory: 走廊還很安靜，廚房已經傳來熱水聲。
+  once: false
+  cooldown: 9
+  priority: 0
+  participants: []
+- id: ribbons
+  category: atmosphere
+  title: 風選的方向
+  place: MARKET
+  text: 每條緞帶都指向不同方向，春祭仍然能一起開始。
+  branches:
+  - id: stay
+    label: 多待一會兒
+    text: 每條緞帶都指向不同方向，春祭仍然能一起開始。
+  - id: note
+    label: 把此刻記下來
+    text: 你在日誌留下一行：每條緞帶都指向不同方向，春祭仍然能一起開始。
+    memory: 每條緞帶都指向不同方向，春祭仍然能一起開始。
+  once: false
+  cooldown: 9
+  priority: 0
+  participants: []
+- id: ropes
+  category: atmosphere
+  title: 繩結的節奏
+  place: DOCK
+  text: 纜繩輕輕碰著木樁，遠處有人哼起小調。
+  branches:
+  - id: stay
+    label: 多待一會兒
+    text: 纜繩輕輕碰著木樁，遠處有人哼起小調。
+  - id: note
+    label: 把此刻記下來
+    text: 你在日誌留下一行：纜繩輕輕碰著木樁，遠處有人哼起小調。
+    memory: 纜繩輕輕碰著木樁，遠處有人哼起小調。
+  once: false
+  cooldown: 9
+  priority: 0
+  participants: []
+- id: north
+  category: atmosphere
+  title: 北方的第一束光
+  place: LIGHTHOUSE
+  text: 光從水面上慢慢走來，沒有人需要急著說話。
+  branches:
+  - id: stay
+    label: 多待一會兒
+    text: 光從水面上慢慢走來，沒有人需要急著說話。
+  - id: note
+    label: 把此刻記下來
+    text: 你在日誌留下一行：光從水面上慢慢走來，沒有人需要急著說話。
+    memory: 光從水面上慢慢走來，沒有人需要急著說話。
+  once: false
+  cooldown: 9
+  priority: 0
+  participants: []

@@ -1,0 +1,14 @@
+[versions]
+kotlin = "2.3.10"
+boot = "4.1.1"
+spring-ai = "2.0.1"
+embabel = "1.5.1"
+koog = "1.2.0"
+[libraries]
+spring-ai-bom = { module = "org.springframework.ai:spring-ai-bom", version.ref = "spring-ai" }
+embabel = { module = "com.embabel.agent:embabel-agent-api", version.ref = "embabel" }
+koog = { module = "ai.koog:agents-core-jvm", version.ref = "koog" }
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+boot = { id = "org.springframework.boot", version.ref = "boot" }

@@ -1,0 +1,115 @@
+{
+  "date": "2026-09-13",
+  "mode": "offline",
+  "automatedTests": [
+    {
+      "suite": "tw.springfestival.ai.ModelBoundaryTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "suite": "tw.springfestival.ai.PlannerTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "suite": "tw.springfestival.server.RestartPersistenceTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0
+    },
+    {
+      "suite": "tw.springfestival.server.WorldIntegrationTest",
+      "tests": 11,
+      "failures": 0,
+      "errors": 0
+    }
+  ],
+  "totalTests": 23,
+  "httpPlaythroughs": [
+    {
+      "solution": "repair",
+      "ending": "depart",
+      "turns": 15,
+      "finalRevision": 15,
+      "graphNodes": [
+        "domain-validation",
+        "embabel-planning",
+        "persist-result",
+        "read-world-and-knowledge",
+        "spring-ai-performance",
+        "transaction-commit",
+        "understand-or-clarify"
+      ]
+    },
+    {
+      "solution": "repair",
+      "ending": "postpone",
+      "turns": 14,
+      "finalRevision": 14,
+      "graphNodes": [
+        "domain-validation",
+        "embabel-planning",
+        "persist-result",
+        "read-world-and-knowledge",
+        "spring-ai-performance",
+        "transaction-commit",
+        "understand-or-clarify"
+      ]
+    },
+    {
+      "solution": "cooperate",
+      "ending": "depart",
+      "turns": 13,
+      "finalRevision": 13,
+      "graphNodes": [
+        "domain-validation",
+        "embabel-planning",
+        "persist-result",
+        "read-world-and-knowledge",
+        "spring-ai-performance",
+        "transaction-commit",
+        "understand-or-clarify"
+      ]
+    },
+    {
+      "solution": "cooperate",
+      "ending": "postpone",
+      "turns": 12,
+      "finalRevision": 12,
+      "graphNodes": [
+        "domain-validation",
+        "embabel-planning",
+        "persist-result",
+        "read-world-and-knowledge",
+        "spring-ai-performance",
+        "transaction-commit",
+        "understand-or-clarify"
+      ]
+    }
+  ],
+  "simulation": {
+    "seed": 26,
+    "turns": 200,
+    "result": "passed"
+  },
+  "processRestart": {
+    "comparedSaves": 9,
+    "result": "all revisions unchanged"
+  },
+  "browserChecks": {
+    "desktop": true,
+    "mobileViewport": "390x844",
+    "memoryCorrection": true,
+    "savedRevisionAfterRestart": true
+  },
+  "notRun": [
+    "three complete live-model playthroughs",
+    "external MCP AI client acceptance",
+    "human playtime and pacing acceptance",
+    "independent new-reader onboarding"
+  ],
+  "artifactSha256": "656754c822cdb146b33fd2396277a65fd76f2fe44b34709870a28d13dde5fb74"
+}

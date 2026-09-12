@@ -1,0 +1,39 @@
+server:
+  address: 127.0.0.1
+  port: ${PORT:8080}
+  tomcat:
+    max-http-form-post-size: 2MB
+spring:
+  jackson:
+    deserialization:
+      fail-on-null-for-primitives: true
+      accept-float-as-int: false
+    mapper:
+      allow-coercion-of-scalars: false
+  application:
+    name: spring-festival
+  datasource:
+    url: ${WORLD_DATABASE_URL:jdbc:h2:file:./data/spring-festival;DB_CLOSE_ON_EXIT=FALSE}
+    username: sa
+    password: ''
+  ai:
+    mcp:
+      client:
+        enabled: false
+      server:
+        enabled: ${WORLD_MCP_ENABLED:false}
+        name: spring-festival
+        version: 0.1.0
+        protocol: STREAMABLE
+        type: SYNC
+        streamable-http:
+          mcp-endpoint: /mcp
+world:
+  mode: ${WORLD_MODE:offline}
+  model: ${WORLD_MODEL:}
+  api-key: ${OPENAI_API_KEY:}
+  debug: ${WORLD_DEBUG:false}
+logging:
+  level:
+    com.embabel: WARN
+    ai.koog: WARN
