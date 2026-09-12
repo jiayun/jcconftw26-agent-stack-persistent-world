@@ -52,13 +52,22 @@ class WorldRules(val events: List<StoryEvent>) {
         val action = intent.actionId ?: return reject(intent.clarification ?: "你想做哪一件事？請選擇下方行動。")
         if (plans.any { it.sourceRevision != w.revision }) throw Conflict("角色計畫已過期，請重新讀取場景。")
         if (action == "chat" || action == "topic") {
-            val recalled = w.visibleMemories("player").firstOrNull()
+            val query = originalText.orEmpty()
+            val speakers = scene(w, "offline").characters
+            val knownBy = (speakers + "player").toSet()
             val candidate = intent.memoryCandidate?.takeIf { it == originalText && it.startsWith("我喜歡") && it.length in 4..100 }
-            val working = Memory("$turnId:working", MemoryLayer.WORKING, originalText ?: "一起聊了今天。", turnId)
-            val semantic = candidate?.let { Memory("$turnId:preference", MemoryLayer.SEMANTIC, it, turnId, importance = 3) }
+            val working = Memory("$turnId:working", MemoryLayer.WORKING, originalText ?: "一起聊了今天。", turnId, knownBy, updatedRevision = w.revision + 1)
+            val semantic = candidate?.let { Memory("$turnId:preference", MemoryLayer.SEMANTIC, it, turnId, knownBy, importance = 3, updatedRevision = w.revision + 1) }
             val retained = w.memories.filter { it.layer != MemoryLayer.WORKING } + w.memories.filter { it.layer == MemoryLayer.WORKING }.takeLast(7)
             val next = w.copy(revision = w.revision + 1, memories = (retained + listOfNotNull(working, semantic)).let { all -> all.filter { it.pinned } + all.filterNot { it.pinned }.takeLast(100) })
-            return ValidatedOutcome(next, true, candidate?.let { "好，我會記得你說的：$it。之後想改變也可以告訴我。" } ?: recalled?.let { "你們聊起：${it.correction ?: it.text}（共同經歷：${it.sourceId}）" } ?: "河風把窗簾吹了起來。今天想從哪件小事開始聊呢？", memoryIds = listOfNotNull(working.id, semantic?.id), speakers = scene(w, "offline").characters)
+            val reply = candidate?.let { "好，我會記得你說的：$it。之後想改變也可以告訴我。" }
+                ?: if (MemoryRecall.isRecallQuestion(query)) {
+                    // Only facts known to everyone speaking can become a shared author response.
+                    val relevant = w.visibleMemories("player", query).filter { it.knownBy.containsAll(speakers) }
+                    if (relevant.isEmpty()) "目前沒有找到能回答這個問題的共同記憶，可以再告訴我一次嗎？"
+                    else relevant.joinToString("\n") { "記錄：${it.effectiveText()}（來源：${it.sourceId}）" }
+                } else "你們停下來聊聊此刻，沒有推進行程，也沒有增加新的承諾。"
+            return ValidatedOutcome(next, true, reply, memoryIds = listOfNotNull(working.id, semantic?.id), speakers = speakers)
         }
         if (action == "rest" || action.startsWith("move:")) {
             val place = if (action == "rest") w.place else runCatching { Place.valueOf(action.substringAfter(':')) }.getOrNull() ?: return reject("找不到這個地點。")
@@ -70,7 +79,7 @@ class WorldRules(val events: List<StoryEvent>) {
         val e = eligible(w).firstOrNull { action.startsWith("event:${it.id}:") } ?: return reject("這裡的事件已經改變，請從目前建議行動重新選擇。")
         val b = e.branches.firstOrNull { "event:${e.id}:${it.id}" == action } ?: return reject("這個行動目前不可用。請依照場景中的建議繼續。")
         if (!w.flags.containsAll(b.require)) return reject("條件尚未成立，先完成場景中的合法下一步。")
-        val memory = b.memory?.let { Memory("$turnId:memory", b.layer, it, e.id, importance = if (b.pinned) 5 else 2, pinned = b.pinned) }
+        val memory = b.memory?.let { Memory("$turnId:memory", b.layer, it, e.id, importance = if (b.pinned) 5 else 2, pinned = b.pinned, knownBy = (e.participants + "player").toSet(), updatedRevision = w.revision + 1) }
         val relations = w.relationships.toMutableMap()
         b.character?.let { npc -> val old = relations.getValue(npc); relations[npc] = old.copy(trust = (old.trust + b.trust).coerceIn(0, 10), closeness = (old.closeness + b.closeness).coerceIn(0, 10), mood = "期待") }
         val skills = w.skills.toMutableMap()

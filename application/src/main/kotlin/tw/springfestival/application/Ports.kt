@@ -6,7 +6,7 @@ interface NpcPlanner { fun plan(world: World): List<NpcPlan> }
 interface StoryModel {
     val mode: String
     fun understand(command: TurnCommand, scene: Scene, budget: TurnBudget): PlayerIntent
-    fun narrate(outcome: ValidatedOutcome, character: String, memories: List<Memory>, budget: TurnBudget): NarrativeDraft
+    fun narrate(outcome: ValidatedOutcome, character: String, memories: List<Memory>, budget: TurnBudget, context: NarrationContext = NarrationContext()): NarrativeDraft
 }
 class TurnBudget(val started: Long = System.nanoTime()) {
     var requests = 0; private set
@@ -21,3 +21,7 @@ data class TurnWork(val turnId: String, val world: World, val command: TurnComma
 interface TurnWorkflow {
     fun execute(work: TurnWork, commit: (ValidatedOutcome, List<NpcPlan>) -> ValidatedOutcome): TurnResult
 }
+
+/** Original question stays separate from committed facts, including during crash recovery. */
+data class NarrationContext(val playerText: String? = null, val eventTitle: String? = null,
+    val lockedFacts: List<String> = emptyList(), val generationScope: String = "僅補充當下動作、表情與對話，不新增世界事實。", val chosenAction: String? = null)

@@ -31,6 +31,7 @@ class EnvironmentConfigTest {
         open().use {
             assertEquals("offline", it.environment.getProperty("world.mode"))
             assertEquals("", it.environment.getProperty("world.api-key"))
+            assertEquals("", it.environment.getProperty("world.reasoning-effort"))
             assertEquals("https://api.openai.com/v1", it.environment.getProperty("world.base-url"))
         }
     }
@@ -42,6 +43,7 @@ class EnvironmentConfigTest {
             WORLD_MODEL=sample-model
             OPENAI_API_KEY=sample-key
             OPENAI_BASE_URL=http://127.0.0.1:1234/v1
+            OPENAI_REASONING_EFFORT=none
             PORT=8099
             WORLD_DATABASE_URL=jdbc:h2:mem:dotenv;DB_CLOSE_DELAY=-1
         """.trimIndent())
@@ -51,6 +53,7 @@ class EnvironmentConfigTest {
             assertEquals("sample-model", env.getProperty("world.model"))
             assertEquals("sample-key", env.getProperty("world.api-key"))
             assertEquals("http://127.0.0.1:1234/v1", env.getProperty("world.base-url"))
+            assertEquals("none", env.getProperty("world.reasoning-effort"))
             assertEquals("8099", env.getProperty("server.port"))
             assertEquals("jdbc:h2:mem:dotenv;DB_CLOSE_DELAY=-1", env.getProperty("spring.datasource.url"))
         }

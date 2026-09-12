@@ -10,7 +10,8 @@
 - Spring AI 2.0.1、Embabel 1.5.1、Koog 1.2.0 同程序實際執行。Embabel 用 GOAP 搜尋路徑，Koog 用真實 graph，Spring AI 使用 typed output 與唯讀 tools。
 - MCP Java SDK 2.0.0、Spring AI WebMVC transport 2.0.1 為正式版；真實 Streamable HTTP initialize、tools/list、五工具呼叫通過。
 - 六地點、44 YAML 事件（6／10／16／6／6）、三技能、關係描述、角色日程、兩個解法、出發／延期、結局後日常。
-- 五層記憶、承諾固定保留、已知資訊過濾、偏好候選驗證、更正／刪除、來源追蹤。
+- 五層記憶、承諾固定保留、依問題相關性與角色可見性檢索、偏好候選驗證、更正／刪除後不回收舊偏好、來源追蹤。
+- 角色語氣、玩家原文及作者場景約束；39 個自動化測試、Gemma 四條路線與 43 項針對性即時檢查通過。
 - H2 file／Flyway／JDBC，request ID 去重、revision 衝突、並行提交、交易快照、已接受／已提交恢復與匯入 round trip。
 - Web 與 MCP 共用存檔、授權範圍、撤銷權杖、禁止跨存檔查詢與隱藏資料外洩。
 - 實際模型工具續回合也計入最多六次請求；三次唯讀工具，多角色共用 45 秒預算。
@@ -21,7 +22,7 @@
 
 | 項目 | 目前狀態／需要的條件 |
 | --- | --- |
-| 至少三次完整真實模型遊玩 | 本次環境沒有 OPENAI_API_KEY 與 WORLD_MODEL。live adapter 已編譯，使用受控測試模型驗證工具與失敗路徑；尚無真實模型遊玩紀錄。 |
+| 至少三次完整真實模型遊玩 | Qwen／Gemma 初測發現的回想、場景與語氣問題已修正；Gemma 最終四條路線 54 回合與 9 個針對性回合通過。尚未完成三次完整人工品質驗收；見 [修正驗收報告](validation/quality-fixes-2026-09-13.md)。 |
 | 外部 MCP AI 客戶端 | Java SDK 協定驗收通過；尚未記錄一個實際外部 AI 客戶端的產品版本與人工操作。 |
 | 2–4 小時核心故事、5–10 次遊玩 | 已有全部事件與合法路線；文字深度、節奏及實際時長尚須真人試玩，不能以 44 事件數量推定達標。 |
 | 前 15 分鐘／45 分鐘體驗指標 | 流程上可很早回收記憶及形成承諾；尚未取得新玩家的計時紀錄。 |
@@ -36,6 +37,6 @@
 
 ## 驗證證據
 
-執行 `./gradlew test :server:bootJar`、`cd frontend && npm run build`、`python3 scripts/smoke.py` 可重現。詳細場景見 [測試指南](testing.md)，離線作者路線摘要見 [驗證摘要](validation/summary.json)。
+執行 `./gradlew test :server:bootJar`、`cd frontend && npm run build`、`python3 scripts/smoke.py` 可重現。詳細場景見 [測試指南](testing.md)，離線作者路線摘要見 [驗證摘要](validation/summary.json)，實際雲端結果見 [Qwen 測試報告](validation/ollama-cloud-2026-09-13.md) 、[Gemma 修正前比較](validation/gemma-cloud-2026-09-13.md) 與 [記憶／角色品質修正驗收](validation/quality-fixes-2026-09-13.md)。
 
 版本調整沒有降版或混入預覽版。前端依官方 npm registry 升級到已修補版本並固定 lockfile；JVM runtime 的 BOM 實際解析差異與框架 API 變化已記錄於 ADR。

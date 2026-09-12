@@ -16,6 +16,8 @@ Gradle 測試不需要金鑰或 Docker。測試資料使用 H2 memory 或 JUnit 
 
 | 測試 | 檢查重點 |
 | --- | --- |
+| `MemoryRecallTest` | 問題相關性、更新偏好、更正／刪除防復活、角色可見性與多回合回想 |
+| `NarrationContextTest` | 原始問題與有效證據傳遞、語氣／物品修復、事件作者文字與提交後恢復 |
 | `PlannerTest` | 三種目標的真正 action path、私人資訊過濾、Koog 澄清與作者備援、提交後只補敘事 |
 | `ModelBoundaryTest` | Spring AI 真實 tool loop、typed output、角色可見性、六次模型／三次工具上限 |
 | `WorldIntegrationTest` | HTTP、MCP SDK 的 Streamable HTTP 交握與五工具、跨入口去重、撤銷權杖、跨存檔查詢、非法輸入、型別拒絕、並行提交、記憶更正、匯入、四條路線與 200 回合 |
@@ -57,3 +59,13 @@ HTTP 與 MCP 已共用同一個世界；UI 每三秒重新讀取世界與最新�
 另外需至少一個實際外部 MCP AI 客戶端的產品與版本紀錄，走完查場景、提交回合、查結果及回 Web 續玩。SDK 協定測試不代替這一項。
 
 2–4 小時的核心體驗與 5–10 次遊玩節奏仍須真人實測；目前事件數量與可達性通過，不能據此推定閱讀時間與故事品質達標。
+
+## 真實模型的記憶與角色回歸
+
+沿用 `.env` 的 live 模型，測試時以 `java -jar server/build/libs/server-0.1.0.jar --world.debug=true` 開啟 trace，再執行：
+
+```sh
+python3 scripts/live_quality.py --record /tmp/live-quality.json
+```
+
+腳本建立獨立 demo 存檔，測試合法行動改寫、偏好保存、穿插兩段日常聊天後回想、PATCH 更正、刪除後不復活、模糊輸入、非法事實宣稱、去重與 revision 衝突。會呼叫真實模型並消耗供應商額度；不放進預設 CI。格式與關鍵詞檢查之外，仍要閱讀實際台詞評估語氣與場景忠實度。測試完成後可移除命令列 debug 參數，恢復 `.env` 設定。

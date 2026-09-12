@@ -35,6 +35,7 @@ world:
   model: ${WORLD_MODEL:}
   api-key: ${OPENAI_API_KEY:}
   base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+  reasoning-effort: ${OPENAI_REASONING_EFFORT:}
   debug: ${WORLD_DEBUG:false}
 logging:
   level:

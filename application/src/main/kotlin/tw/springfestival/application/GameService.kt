@@ -68,7 +68,7 @@ class GameService(val store: WorldStore, val rules: WorldRules, val model: Story
     fun import(world: World): World {
         require(world.schemaVersion == 1 && world.contentVersion == CONTENT_VERSION) { "存檔版本不相容，原檔未修改。" }
         require(world.name.isNotBlank() && world.name.length <= 80 && world.revision >= 0 && world.tick in 0..1_000_000 && world.chapter in 0..6)
-        require(world.memories.size <= 150 && world.memories.all { it.text.length <= 2000 && it.sourceId.isNotBlank() })
+        require(world.memories.size <= 150 && world.memories.all { it.text.length <= 2000 && it.sourceId.isNotBlank() && it.updatedRevision in 0..world.revision })
         require(world.completed.keys.all { id -> rules.events.any { it.id == id } })
         require(world.skills.keys == setOf("cooking", "observation", "folkMagic"))
         require(world.skills.values.flatten().all { id -> rules.events.any { it.id == id } })

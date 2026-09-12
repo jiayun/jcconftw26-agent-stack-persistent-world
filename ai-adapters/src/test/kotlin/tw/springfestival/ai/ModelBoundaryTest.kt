@@ -14,7 +14,7 @@ class ModelBoundaryTest {
         val b=TurnBudget()
         val tools=ReadOnlyKnowledge("公開場景",listOf(Memory("private",MemoryLayer.SEMANTIC,"秘密","private",setOf("Elia")),Memory("known",MemoryLayer.EPISODIC,"一起修燈","festival")),"Miro",b)
         assertEquals("公開場景",tools.scene())
-        assertEquals(listOf("known"),tools.memories("秘密").map{it.id})
+        assertTrue(tools.memories("秘密").isEmpty())
         assertEquals(listOf("festival"),tools.events())
         assertThrows(IllegalStateException::class.java){tools.scene()}
     }

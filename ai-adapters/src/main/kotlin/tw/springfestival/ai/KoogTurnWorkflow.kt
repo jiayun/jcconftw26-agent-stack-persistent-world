@@ -32,6 +32,7 @@ class KoogTurnWorkflow(private val rules: WorldRules, private val model: StoryMo
         var outcome = work.committed
         var narrative = ""
         var fallback = false
+        val usedMemorySources = linkedSetOf<String>()
         val graph = strategy<String, String>("persistent-player-turn") {
             val context by node<String, String>("read-world-and-knowledge") { input ->
                 nodes += "read-world-and-knowledge"; memories = work.world.visibleMemories("player", work.command.text.orEmpty()); input
@@ -58,9 +59,23 @@ class KoogTurnWorkflow(private val rules: WorldRules, private val model: StoryMo
                 nodes += "spring-ai-performance"
                 val saved = outcome!!
                 val present = saved.speakers
+                val event = rules.events.firstOrNull { it.id == saved.eventId }
+                val context = NarrationContext(work.command.text, event?.title, event?.lockedFacts.orEmpty(),
+                    event?.generationScope ?: "僅回應當下問題，不新增世界事實。",
+                    event?.branches?.firstOrNull { "event:${event.id}:${it.id}" == work.command.suggestionId }?.label)
+                // Event narration is grounded in this event; unrelated old promises cannot crowd it out.
+                val query = if (saved.eventId != null) saved.text.take(2000) else work.command.text.orEmpty()
                 narrative = try {
-                    if (present.isEmpty()) saved.text else if (model.mode == "offline") model.narrate(saved, present.first(), saved.world.visibleMemories(present.first()), budget).text
-                    else present.joinToString("\n\n") { npc -> "$npc：${model.narrate(saved, npc, saved.world.visibleMemories(npc), budget).text}" }
+                    if (present.isEmpty()) saved.text else {
+                        val lines = (if (model.mode == "offline") present.take(1) else present).map { npc ->
+                            val known = saved.world.visibleMemories(npc, query)
+                            usedMemorySources += known.map { it.sourceId }
+                            val text = model.narrate(saved, npc, known, budget, context).text
+                            if (model.mode == "offline") text else "$npc：$text"
+                        }.joinToString("\n\n")
+                        // Keep the committed event visible even if a character only comments on one detail.
+                        if (model.mode == "live" && saved.eventId != null) saved.text + "\n\n" + lines else lines
+                    }
                 } catch (_: Exception) { fallback = true; saved.text }
                 input
             }
@@ -81,7 +96,7 @@ class KoogTurnWorkflow(private val rules: WorldRules, private val model: StoryMo
         try { agent.run(work.turnId) } finally { agent.close() }
         val saved = outcome!!
         TurnResult(work.turnId, saved.world.revision, saved.accepted, narrative, rules.scene(saved.world, model.mode), saved.memoryIds,
-            ExecutionTrace(nodes, plans, memories.map { it.sourceId }, (System.nanoTime() - budget.started) / 1_000_000, budget.requests, budget.tools, budget.tokens, fallback, mapOf(
+            ExecutionTrace(nodes, plans, usedMemorySources.toList(), (System.nanoTime() - budget.started) / 1_000_000, budget.requests, budget.tools, budget.tokens, fallback, mapOf(
                 "revision" to "${work.world.revision} → ${saved.world.revision}",
                 "tick" to "${work.world.tick} → ${saved.world.tick}",
                 "place" to "${work.world.place} → ${saved.world.place}",

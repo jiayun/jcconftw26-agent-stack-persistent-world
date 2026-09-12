@@ -32,7 +32,7 @@ class PlannerTest {
         val failingModel = object : StoryModel {
             override val mode = "live"
             override fun understand(command: TurnCommand, scene: Scene, budget: TurnBudget) = PlayerIntent(clarification = "請選一件事。")
-            override fun narrate(outcome: ValidatedOutcome, character: String, memories: List<Memory>, budget: TurnBudget): NarrativeDraft = error("模型斷線")
+            override fun narrate(outcome: ValidatedOutcome, character: String, memories: List<Memory>, budget: TurnBudget, context: NarrationContext): NarrativeDraft = error("模型斷線")
         }
         var commits = 0
         val result = KoogTurnWorkflow(rules, failingModel, planner).execute(TurnWork("turn", w, TurnCommand("request", 0, text = "也許吧"))) { outcome, _ -> commits++; outcome }
@@ -52,7 +52,7 @@ class PlannerTest {
         val model = object : StoryModel {
             override val mode = "live"
             override fun understand(command: TurnCommand, scene: Scene, budget: TurnBudget) = error("不應重新理解")
-            override fun narrate(outcome: ValidatedOutcome, character: String, memories: List<Memory>, budget: TurnBudget): NarrativeDraft = error("模型逾時")
+            override fun narrate(outcome: ValidatedOutcome, character: String, memories: List<Memory>, budget: TurnBudget, context: NarrationContext): NarrativeDraft = error("模型逾時")
         }
         val outcome = ValidatedOutcome(w.copy(revision = 1), true, "已保存的事件", speakers = listOf("Elia"))
         val result = KoogTurnWorkflow(WorldRules(emptyList()), model, planner).execute(TurnWork("fallback", w, TurnCommand("req", 0, suggestionId = "rest"), outcome)) { _, _ -> error("不可重複提交") }

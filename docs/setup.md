@@ -12,6 +12,7 @@
 | `WORLD_MODEL` | 空白 | live 必填的 OpenAI 模型 ID |
 | `OPENAI_API_KEY` | 空白 | live 必填；不寫入 repo、存檔、MCP 工具參數 |
 | `OPENAI_BASE_URL` | `https://api.openai.com/v1` | OpenAI 或相容 API 根網址，包含版本路徑，不含 `/chat/completions` |
+| `OPENAI_REASONING_EFFORT` | 空白 | 選填；空白不傳參數。Ollama Qwen 3.5 的短篇敘事可設 `none`，其他值依模型支援情形使用 |
 | `WORLD_DATABASE_URL` | `jdbc:h2:file:./data/spring-festival;DB_CLOSE_ON_EXIT=FALSE` | H2 file JDBC URL |
 | `WORLD_MCP_ENABLED` | `false` | 啟用同程序 `/mcp` Streamable HTTP |
 | `WORLD_DEBUG` | `false` | 顯示開發觀察工具 |

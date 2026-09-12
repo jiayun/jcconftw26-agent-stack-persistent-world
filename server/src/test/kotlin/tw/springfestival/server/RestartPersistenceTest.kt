@@ -37,4 +37,32 @@ class RestartPersistenceTest {
             assertNotNull(game.store.latest(id)?.result)
         }
     }
+    @Test fun `更正與刪除偏好在重啟及匯入後仍有效`() {
+        val url = "jdbc:h2:file:${directory.resolve("memory-recall")};DB_CLOSE_ON_EXIT=FALSE"
+        fun open() = SpringApplicationBuilder(WorldApplication::class.java).web(WebApplicationType.NONE)
+            .run("--spring.datasource.url=$url", "--spring.ai.mcp.server.enabled=false", "--world.mode=offline")
+        var id = ""
+        open().use { ctx ->
+            val game = ctx.getBean(GameService::class.java)
+            val w = game.create("持久記憶", true)
+            id = w.id
+            game.store.editMemory(id, w.revision, "demo-tea", "你現在喜歡黑咖啡。")
+        }
+        open().use { ctx ->
+            val game = ctx.getBean(GameService::class.java)
+            val w = game.store.load(id)
+            val found = w.visibleMemories("Elia", "還記得我喜歡喝什麼嗎？")
+            assertEquals(listOf("你現在喜歡黑咖啡。"), found.map { it.effectiveText() })
+            assertEquals(1, found.single().updatedRevision)
+            val imported = game.import(w)
+            assertEquals(found, imported.visibleMemories("Elia", "飲料"))
+            game.store.editMemory(id, w.revision, "demo-tea", null)
+        }
+        open().use { ctx ->
+            val game = ctx.getBean(GameService::class.java)
+            assertTrue(game.store.load(id).visibleMemories("Elia", "喝什麼").isEmpty())
+            assertTrue(game.store.load(id).visibleMemories("Elia", "北方約定").any { it.pinned })
+        }
+    }
+
 }

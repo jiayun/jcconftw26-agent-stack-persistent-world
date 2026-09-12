@@ -13,7 +13,7 @@ data class EditMemory(val expectedRevision: Long, val text: String? = null)
 @RequestMapping("/api")
 class HttpApi(private val game: GameService, private val tokens: ConnectionTokens, @param:Value("\${world.debug}") private val debug: Boolean, @param:Value("\${spring.ai.mcp.server.enabled}") private val mcp: Boolean) {
     @GetMapping("/settings") fun settings() = mapOf("mode" to game.model.mode, "mcpEnabled" to mcp, "debugEnabled" to debug,
-        "privacy" to "離線模式不傳送資料。live 模式會將輸入、目前場景及角色可見記憶傳送給 OpenAI。存檔保存在本機 H2；外部 MCP 客戶端有自己的資料政策。")
+        "privacy" to "離線模式不傳送資料。live 模式會將輸入、目前場景及角色可見記憶傳送給設定的模型服務。存檔保存在本機 H2；外部 MCP 客戶端有自己的資料政策。")
     @GetMapping("/saves") fun saves() = game.store.list().map { mapOf("id" to it.id, "name" to it.name, "revision" to it.revision, "day" to it.day(), "ending" to it.ending) }
     @PostMapping("/saves") fun create(@RequestBody body: CreateSave) = game.create(body.name, body.demo, body.seed).let { game.scene(it.id) }
     @GetMapping("/saves/{id}/scene") fun scene(@PathVariable id: String) = game.scene(id)

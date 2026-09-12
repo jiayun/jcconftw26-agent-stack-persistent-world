@@ -6,7 +6,7 @@ enum class Place(val label: String) { INN("旅館"), MARKET("市集"), TEAHOUSE(
 enum class MemoryLayer { WORKING, EPISODIC, SEMANTIC, RELATIONSHIP, STORY }
 data class Memory(val id: String, val layer: MemoryLayer, val text: String, val sourceId: String,
     val knownBy: Set<String> = setOf("player", "Elia", "Miro"), val importance: Int = 1, val pinned: Boolean = false,
-    val correction: String? = null)
+    val correction: String? = null, val updatedRevision: Long = 0)
 data class Relationship(val trust: Int = 0, val closeness: Int = 0, val tension: Int = 0, val mood: String = "平靜") {
     fun description() = when { tension > 3 -> "願意聽你說，但有些拘謹"; closeness >= 5 -> "把你當成可以一起商量未來的人"; trust >= 3 -> "開始放心把心事交給你"; else -> "正在慢慢認識你" }
 }
@@ -26,9 +26,8 @@ data class World(
         "Elia" to listOf(Place.INN, Place.MARKET, Place.BRIDGE)[tick % 3],
         "Miro" to listOf(Place.TEAHOUSE, Place.BRIDGE, Place.MARKET)[tick % 3])
     fun skillLevel(skill: String) = when (skills[skill].orEmpty().size) { 0, 1 -> "初識"; 2, 3 -> "熟悉"; else -> "拿手" }
-    fun visibleMemories(viewer: String, query: String = "", limit: Int = 6) = memories.filter { viewer in it.knownBy }
-        .sortedByDescending { (if (query.isNotBlank() && (it.correction ?: it.text).contains(query, true)) 100 else 0) + it.importance * 3 + (if (it.pinned) 20 else 0) }
-        .take(limit)
+    fun visibleMemories(viewer: String, query: String = "", limit: Int = 6) =
+        MemoryRecall.select(memories, viewer, query, limit)
 }
 data class JournalEntry(val eventId: String, val title: String, val text: String, val revision: Long)
 data class Branch(val id: String, val label: String, val text: String, val require: Set<String> = emptySet(),

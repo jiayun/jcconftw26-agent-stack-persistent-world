@@ -31,15 +31,19 @@ class WorldApplication {
         @Value("\${world.model}") model: String,
         @Value("\${world.api-key}") key: String,
         @Value("\${world.base-url}") baseUrl: String,
+        @Value("\${world.reasoning-effort:}") reasoningEffort: String,
     ): StoryModel {
         require(mode in setOf("offline", "live")) { "WORLD_MODE 必須為 offline 或 live。" }
         val characters: Map<String, Map<String, String>> = javaClass.getResourceAsStream("/content/characters.yaml").use { Yaml().load(it) }
         require(characters.keys == setOf("Elia", "Miro") && characters.values.all { it.keys.containsAll(setOf("voice", "goal", "private")) }) { "角色聖經格式不正確。" }
-        val voices = characters.mapValues { it.value.getValue("voice") }
+        val voices = characters.mapValues { it.value.getValue("voice") + "\n公開目標：" + it.value.getValue("goal") }
         if (mode == "offline") return SpringStoryModel(null, mode, voices)
         require(model.isNotBlank() && key.isNotBlank()) { "live 模式需要設定 WORLD_MODEL 與 OPENAI_API_KEY。" }
         require(baseUrl.isNotBlank()) { "live 模式需要設定 OPENAI_BASE_URL。" }
-        val chat = OpenAiChatModel.builder().options(OpenAiChatOptions.builder().baseUrl(baseUrl).apiKey(key).model(model).timeout(java.time.Duration.ofSeconds(40)).maxRetries(0).parallelToolCalls(false).build()).build()
+        val options = OpenAiChatOptions.builder().baseUrl(baseUrl).apiKey(key).model(model)
+            .timeout(java.time.Duration.ofSeconds(40)).maxRetries(0).parallelToolCalls(false)
+        if (reasoningEffort.isNotBlank()) options.reasoningEffort(reasoningEffort)
+        val chat = OpenAiChatModel.builder().options(options.build()).build()
         return SpringStoryModel(ChatClient.create(chat), mode, voices)
     }
     @Bean fun npcPlanner(): NpcPlanner = EmbabelNpcPlanner()

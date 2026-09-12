@@ -55,9 +55,7 @@ class JdbcWorldStore(private val jdbc: JdbcTemplate, private val tx: Transaction
         val w = locked(id)
         if (w.revision != expectedRevision) throw Conflict("記憶已更新，請重新讀取。")
         if (jdbc.queryForObject("SELECT COUNT(*) FROM turns WHERE save_id = ? AND status IN ('ACCEPTED','COMMITTED')", Int::class.java, id)!! > 0) throw Conflict("請等候目前回合完成後再更正記憶。")
-        require(text == null || text.isNotBlank() && text.length <= 2000)
-        val memory = w.memories.firstOrNull { it.id == memoryId && "player" in it.knownBy } ?: throw Missing("找不到這筆可見記憶。")
-        val next = w.copy(revision = w.revision + 1, memories = if (text == null) w.memories - memory else w.memories.map { if (it.id == memoryId) it.copy(correction = text) else it })
+        val next = w.changeMemory(memoryId, text)
         jdbc.update("UPDATE saves SET revision = ?, document = ? WHERE id = ?", next.revision, encode(next), id)
         next
     }!!
