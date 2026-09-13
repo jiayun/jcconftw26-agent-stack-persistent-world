@@ -99,3 +99,5 @@ npm run dev
 [安裝與模型設定](docs/setup.md) · [測試與復原](docs/testing.md) · [實作與驗收紀錄](docs/implementation-status.md)
 
 授權：Apache-2.0。場景插畫為此專案的原創 SVG，沒有遠端字型、追蹤碼或外部圖片請求。
+
+存檔的搜尋、匯出及批次刪除操作見 [存檔管理](docs/saves.md)。

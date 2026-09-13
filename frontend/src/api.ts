@@ -18,7 +18,7 @@ export type Scene = {
   skills: Record<string, string>;
   mode: string;
 };
-export type Save = { id: string; name: string; revision: number; day: number };
+export type Save = { id: string; name: string; revision: number; day: number; chapter: number; placeName: string; ending: string | null; busy: boolean };
 export type Memory = {
   id: string;
   layer: string;

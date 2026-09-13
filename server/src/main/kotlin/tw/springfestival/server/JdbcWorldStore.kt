@@ -12,6 +12,24 @@ class JdbcWorldStore(private val jdbc: JdbcTemplate, private val tx: Transaction
     private fun <T> decode(value: String, type: Class<T>): T = json.readValue(value, type)
     private fun encode(value: Any) = json.writeValueAsString(value)
     override fun list(): List<World> = jdbc.query("SELECT document FROM saves ORDER BY id") { rs, _ -> decode(rs.getString(1), World::class.java) }
+    override fun delete(saves: List<SaveDeletion>): List<String> = tx.execute {
+        require(saves.size in 1..1000 && saves.map { it.id }.distinct().size == saves.size) { "請選擇 1 至 1000 個不重複的存檔。" }
+        require(saves.all { it.id.length in 1..36 && it.expectedRevision >= 0 }) { "存檔刪除資料不正確。" }
+        // Lock in a stable order, shared with turn acceptance/commit and memory editing.
+        val selected = saves.sortedBy { it.id }.map { it to locked(it.id) }
+        selected.forEach { (request, world) ->
+            if (world.revision != request.expectedRevision) throw Conflict("存檔「${world.name}」已更新，請重新確認後再刪除。")
+            if (jdbc.queryForObject("SELECT COUNT(*) FROM turns WHERE save_id = ? AND status IN ('ACCEPTED','COMMITTED')", Int::class.java, world.id)!! > 0)
+                throw Conflict("存檔「${world.name}」仍有回合正在處理，請等候完成後再刪除。")
+        }
+        selected.forEach { (_, world) ->
+            jdbc.update("DELETE FROM world_changes WHERE save_id = ?", world.id)
+            jdbc.update("DELETE FROM turns WHERE save_id = ?", world.id)
+            jdbc.update("DELETE FROM connection_tokens WHERE save_id = ?", world.id)
+            jdbc.update("DELETE FROM saves WHERE id = ?", world.id)
+        }
+        saves.map { it.id }
+    }!!
     override fun load(id: String): World = jdbc.query("SELECT document FROM saves WHERE id = ?", { rs, _ -> decode(rs.getString(1), World::class.java) }, id).firstOrNull() ?: throw Missing("找不到這個存檔。")
     private fun locked(id: String): World = jdbc.query("SELECT document FROM saves WHERE id = ? FOR UPDATE", { rs, _ -> decode(rs.getString(1), World::class.java) }, id).firstOrNull() ?: throw Missing("找不到這個存檔。")
     override fun create(world: World): World { jdbc.update("INSERT INTO saves(id, revision, document) VALUES (?, ?, ?)", world.id, world.revision, encode(world)); return world }

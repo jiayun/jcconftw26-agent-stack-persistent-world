@@ -8,8 +8,10 @@ import java.util.concurrent.ConcurrentHashMap
 data class TurnRecord(val id: String, val saveId: String, val command: TurnCommand, val status: String,
     val entry: String, val outcome: ValidatedOutcome? = null, val result: TurnResult? = null, val error: String? = null)
 data class TurnReceipt(val turnId: String, val status: String)
+data class SaveDeletion(val id: String, val expectedRevision: Long)
 interface WorldStore {
     fun list(): List<World>
+    fun delete(saves: List<SaveDeletion>): List<String>
     fun load(id: String): World
     fun create(world: World): World
     fun accept(saveId: String, command: TurnCommand, entry: String): TurnRecord

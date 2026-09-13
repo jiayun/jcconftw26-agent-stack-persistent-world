@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "./style.css";
+import { SaveManager } from "./SaveManager";
 import { Landscape, Portrait } from "./SceneArt";
 import {
   api,
@@ -42,7 +43,7 @@ export default function App() {
   const generation = useRef(0),
     fileInput = useRef<HTMLInputElement>(null);
   const base = scene ? `/saves/${scene.saveId}` : "";
-  const refreshSaves = () => api<Save[]>("/saves").then(setSaves);
+  const refreshSaves = () => api<Save[]>("/saves").then((list) => { setSaves(list); return list; });
   const report = (e: unknown) =>
     setError(e instanceof Error ? e.message : "發生未預期的錯誤，請重試。");
   async function load(id: string) {
@@ -52,6 +53,7 @@ export default function App() {
     setTrace(null);
     setNarrative("");
     setLastTurn("");
+    setText(""); setMemories([]); setJournal([]); setConnections([]); setEditing(null);
     const next = await api<Scene>(`/saves/${id}/scene`);
     if (current !== generation.current) return;
     setScene(next);
@@ -65,9 +67,10 @@ export default function App() {
   useEffect(() => {
     refreshSaves()
       .then(async (list) => {
-        void list;
-        const id = localStorage.getItem("spring-save");
+        const stored = localStorage.getItem("spring-save");
+        const id = list.some((save) => save.id === stored) ? stored : list[0]?.id;
         if (id) await load(id);
+        else localStorage.removeItem("spring-save");
       })
       .catch(report);
     api<typeof settings>("/settings").then(setSettings).catch(report);
@@ -123,6 +126,26 @@ export default function App() {
     }, 3000);
     return () => clearInterval(timer);
   }, [scene?.saveId, busy]);
+  async function afterDelete(ids: string[]) {
+    for (const id of ids) {
+      localStorage.removeItem("spring-pending:" + id);
+      localStorage.removeItem("spring-request:" + id);
+    }
+    const currentDeleted = scene != null && ids.includes(scene.saveId);
+    if (currentDeleted) {
+      ++generation.current;
+      localStorage.removeItem("spring-save");
+      setScene(null);
+      setNarrative(""); setMemories([]); setJournal([]); setConnections([]);
+      setToken(""); setTrace(null); setLastTurn(""); setText(""); setEditing(null);
+    }
+    const remaining = await refreshSaves();
+    if (currentDeleted) {
+      if (remaining.length) await load(remaining[0].id);
+      else setTab("場景");
+    }
+    setError("");
+  }
   async function create(demo: boolean) {
     setBusy(true);
     setError("");
@@ -772,6 +795,8 @@ export default function App() {
                     </button>
                   </div>
                 </article>
+                <SaveManager saves={saves} currentId={scene.saveId} busy={busy} onBusy={setBusy}
+                  onRefresh={refreshSaves} onDeleted={afterDelete} onError={report} />
                 <article>
                   <h2>帶著故事走</h2>
                   <div className="actions">

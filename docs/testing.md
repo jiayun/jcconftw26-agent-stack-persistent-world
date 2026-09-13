@@ -83,3 +83,20 @@ python3 scripts/live_advice.py --record /tmp/live-advice.json
 腳本建立旅館與舊橋兩個獨立存檔，以「Elia 你說怎麼辦？」、「你會怎麼選？」等四種問法驗證聊天不推進時間、改變地點或新增事實；另外檢查模糊澄清、非法移動、明確移動與事件按鈕。使用真實模型，不納入預設 CI。模型辨識階段只允許目前事件 ID、chat、rest 與已知地點的 move ID；輸出未知行動或同時包含行動與澄清時，使用原回合預算修復一次，仍失敗就自然澄清。世界規則仍負責最終行動條件檢查。
 
 本輪結果見 [詢問意見修正驗收](validation/advice-intent-2026-09-13.md)。
+
+## 存檔管理驗收
+
+`WorldIntegrationTest` 包含批次刪除後的關聯資料清理、舊權杖失效、其他存檔保留、備份可再匯入、版本衝突、ACCEPTED／COMMITTED 回合保護、無效批次及提交／刪除競爭測試。
+
+UI 可用 `scripts/save_management_ui.cjs` 驗收。先啟動獨立離線資料庫：
+
+```sh
+java -jar server/build/libs/server-0.1.0.jar --server.port=8081 --world.mode=offline \
+  '--spring.datasource.url=jdbc:h2:mem:save-management-ui;DB_CLOSE_DELAY=-1'
+# 另一終端，需要 Node 能載入 playwright 套件及本機 Chrome：
+node scripts/save_management_ui.cjs
+```
+
+腳本要求目標為 offline 且完全沒有存檔，才建立三個測試故事並操作搜尋、匯出下載、取消、刪除目前存檔、過期確認拒絕、全部刪除及重新載入。包含 1280px／390px 畫面檢查與瀏覽器錯誤檢查。可用 `SAVE_TEST_URL`、`CHROME_PATH`、`SAVE_TEST_OUTPUT` 覆寫測試 URL、Chrome 執行檔及輸出目錄；Playwright 安裝於其他目錄時可設定 `NODE_PATH`。預設輸出至 `/tmp/persistent-world-sources`，不納入日常 CI。
+
+2026-09-13：48 個自動化測試及前端建置通過，UI 十個驗收項目通過；新版啟動後原有 58 個存檔摘要一致。這項功能不呼叫模型，本輪使用離線測試驗證，沒有額外執行模型品質評估。

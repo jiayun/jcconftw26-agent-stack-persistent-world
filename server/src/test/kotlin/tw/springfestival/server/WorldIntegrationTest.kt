@@ -47,6 +47,73 @@ class WorldIntegrationTest {
         builder.method(method, body?.let { HttpRequest.BodyPublishers.ofString(json.writeValueAsString(it)) } ?: HttpRequest.BodyPublishers.noBody())
         return HttpClient.newHttpClient().send(builder.build(), HttpResponse.BodyHandlers.ofString())
     }
+    @Test fun `批次刪除清除回合變更權杖而保留其他存檔及可匯入備份`() {
+        val a = game.create("刪除甲", true); val b = game.create("刪除乙"); val keep = game.create("保留")
+        val issued = tokens.issue(a.id); val keepToken = tokens.issue(keep.id).getValue("token")
+        val turn = game.submit(a.id, command(a, "rest"), "WEB"); await(a.id, turn.turnId)
+        val backup = game.store.load(a.id)
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM world_changes WHERE save_id = ?", Int::class.java, a.id))
+        val response = http("/api/saves/delete", "POST", DeleteSaves(listOf(SaveDeletion(a.id, backup.revision), SaveDeletion(b.id, 0))))
+        assertEquals(200, response.statusCode(), response.body())
+        assertEquals(setOf(a.id, b.id), json.readTree(response.body())["deletedIds"].map { it.asText() }.toSet())
+        for (id in listOf(a.id, b.id)) {
+            assertEquals(404, http("/api/saves/$id/scene").statusCode())
+            for (table in listOf("turns", "world_changes", "connection_tokens"))
+                assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM $table WHERE save_id = ?", Int::class.java, id))
+        }
+        assertEquals(404, http("/api/saves/${a.id}/turns/${turn.turnId}").statusCode())
+        assertNull(tokens.authorize("Bearer ${issued.getValue("token")}"))
+        assertEquals(keep.id, tokens.authorize("Bearer $keepToken"))
+        assertEquals(keep, game.store.load(keep.id))
+        assertEquals(backup.memories, game.import(backup).memories)
+    }
+    @Test fun `批次刪除拒絕新進度與處理中回合且整批保留`() {
+        val a = game.create("版本"); val b = game.create("一起保留")
+        val r = game.submit(a.id, command(a, "rest"), "WEB"); await(a.id, r.turnId)
+        fun delete(revision: Long) = http("/api/saves/delete", "POST", DeleteSaves(listOf(SaveDeletion(a.id, revision), SaveDeletion(b.id, 0))))
+        assertEquals(409, delete(0).statusCode())
+        val current = game.store.load(a.id)
+        val pending = game.store.accept(a.id, command(current, "rest"), "WEB")
+        try {
+            assertEquals(409, delete(current.revision).statusCode())
+            val committed = game.store.commit(pending, game.rules.resolve(current, PlayerIntent("rest"), emptyList(), pending.id), emptyList())
+            assertEquals(409, delete(committed.world.revision).statusCode())
+            assertEquals(b, game.store.load(b.id))
+        } finally { game.recover(); await(a.id, pending.id) }
+    }
+    @Test fun `空批次重複及遺失存檔均不部分刪除`() {
+        val w = game.create("保留整批")
+        for (items in listOf(emptyList(), listOf(SaveDeletion(w.id, 0), SaveDeletion(w.id, 0))))
+            assertEquals(400, http("/api/saves/delete", "POST", DeleteSaves(items)).statusCode())
+        assertEquals(404, http("/api/saves/delete", "POST", DeleteSaves(listOf(SaveDeletion(w.id, 0), SaveDeletion(UUID.randomUUID().toString(), 0)))).statusCode())
+        assertEquals(w, game.store.load(w.id))
+    }
+    @Test fun `提交與刪除競爭不會留下孤兒或刪掉處理中的世界`() {
+        java.util.concurrent.Executors.newFixedThreadPool(2).use { executor ->
+            repeat(6) {
+                val w = game.create("刪除競爭")
+                val start = java.util.concurrent.CyclicBarrier(2)
+                val accept = executor.submit(java.util.concurrent.Callable {
+                    start.await(); runCatching { game.store.accept(w.id, command(w, "rest"), "WEB") }
+                })
+                val delete = executor.submit(java.util.concurrent.Callable {
+                    start.await(); runCatching { game.store.delete(listOf(SaveDeletion(w.id, 0))) }
+                })
+                val accepted = accept.get(10, java.util.concurrent.TimeUnit.SECONDS)
+                val deleted = delete.get(10, java.util.concurrent.TimeUnit.SECONDS)
+                if (accepted.isSuccess) {
+                    assertTrue(deleted.exceptionOrNull() is Conflict)
+                    assertEquals(w, game.store.load(w.id))
+                    game.store.fail(accepted.getOrThrow(), "TEST_FINISHED")
+                    game.store.delete(listOf(SaveDeletion(w.id, 0)))
+                } else {
+                    assertTrue(deleted.isSuccess, deleted.exceptionOrNull()?.toString())
+                    assertTrue(accepted.exceptionOrNull() is Missing)
+                }
+                assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM turns WHERE save_id = ?", Int::class.java, w.id))
+            }
+        }
+    }
     @Test fun `真實 MCP 交握五工具與跨入口去重`() {
         val w = game.create("跨入口", true)
         val token = tokens.issue(w.id).getValue("token")
