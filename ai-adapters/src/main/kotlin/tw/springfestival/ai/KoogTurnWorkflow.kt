@@ -40,7 +40,7 @@ class KoogTurnWorkflow(private val rules: WorldRules, private val model: StoryMo
             val understand by node<String, String>("understand-or-clarify") { input ->
                 nodes += "understand-or-clarify"
                 if (outcome == null) intent = try { model.understand(work.command, rules.scene(work.world, model.mode), budget) }
-                    catch (_: Exception) { PlayerIntent(clarification = "目前無法理解這句話，請使用建議行動再試一次。") }
+                    catch (_: Exception) { PlayerIntent(clarification = "剛才沒能確認你的意思。你想先聽聽角色的看法，還是採取行動？可以換個說法告訴我。") }
                 input
             }
             val plan by node<String, String>("embabel-planning") { input ->

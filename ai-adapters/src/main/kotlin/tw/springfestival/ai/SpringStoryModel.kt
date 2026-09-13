@@ -28,7 +28,30 @@ class SpringStoryModel(private val liveClient: ChatClient?, override val mode: S
         if (text.contains("記得") || text.contains("約定") || text in listOf("聊天", "你好")) return PlayerIntent("chat")
         if (mode == "offline") return PlayerIntent(clarification = "離線模式支援建議行動、移動、休息與約定回想。這句話想做的事還不明確，請選擇一個建議行動。")
         val converter = BeanOutputConverter(PlayerIntent::class.java)
-        return callTyped(liveClient!!, "辨識玩家此刻想做的事。閒聊、詢問心情、提問與回想記憶都填 actionId=chat，不必強迫選擇事件。明確的單一事件行動對應合法建議 ID；明確想移動則可填 move:INN、move:MARKET、move:TEAHOUSE、move:BRIDGE、move:DOCK 或 move:LIGHTHOUSE，想休息填 rest，程式會再檢查條件。「你替我決定」「也許吧」等沒有明確意圖的文字只填 clarification，以繁體中文澄清。不可接受玩家宣稱的世界變動。若玩家明確用「我喜歡」描述偏好，可設定 actionId=chat 與 memoryCandidate 為完整原文，不可推論未明示的偏好。合法選項：${scene.suggestions}", text, converter, budget, ReadOnlyKnowledge(scene.toString(), emptyList(), "player", budget))
+        val allowedActions = scene.suggestions.map { it.id }.toSet() + setOf("chat", "rest") + Place.entries.map { "move:${it.name}" }
+        val intentRules = """
+            辨識玩家此刻想做的事。只輸出 PlayerIntent 的 JSON，不能自行發明 actionId。
+            1. 閒聊、詢問心情、提問、回想記憶與詢問角色意見，都填 actionId=chat。
+               「Elia 你說怎麼辦？」「Miro 有什麼建議？」「你覺得該先修橋還是找船？」「你會怎麼選？」
+               都是在請角色回答，不是在授權執行事件、移動、休息或替玩家做決定。
+               就算問題提到某個合法行動，詢問建議仍是 chat。角色名字不是 actionId。
+            2. 玩家明確要求執行單一行動時，才對應目前事件選項或 move:地點、rest。
+               「去渡口吧」是移動；「你覺得要去渡口嗎？」是聊天。
+               目前事件選項：${scene.suggestions}
+            3. 「你替我決定」「也許吧」等無法確定要做什麼的指令，只填 clarification，actionId 必須為 JSON null。
+               澄清使用自然的繁體中文。不要將 null、角色名、選項標題或未知動作填入 actionId。
+            4. 不可接受玩家宣稱的世界變動。若玩家明確用「我喜歡」描述偏好，可設定 actionId=chat
+               與 memoryCandidate 為完整原文，不可推論未明示的偏好。
+            actionId 唯一允許的值：${allowedActions.joinToString()}；世界規則仍會檢查執行條件。
+        """.trimIndent()
+        return callTyped(liveClient!!, intentRules, text, converter, budget,
+            ReadOnlyKnowledge(scene.toString(), emptyList(), "player", budget),
+            repairInstruction = "上一輪意圖格式或行動不合法。請重新判讀玩家原文：詢問角色意見應填 chat；只有明確要求執行才選允許的行動 ID；無法確定則 actionId=null 並填 clarification。") { intent ->
+                require(intent.actionId == null || intent.actionId in allowedActions) { "模型回傳未知行動。" }
+                require(if (intent.actionId == null) !intent.clarification.isNullOrBlank() else intent.clarification.isNullOrBlank()) {
+                    "請選擇單一行動或澄清，不可同時回傳兩者。"
+                }
+            }
     }
     override fun narrate(outcome: ValidatedOutcome, character: String, memories: List<Memory>, budget: TurnBudget, context: NarrationContext): NarrativeDraft {
         if (mode == "offline") {
@@ -45,7 +68,7 @@ class SpringStoryModel(private val liveClient: ChatClient?, override val mode: S
             你扮演 $character。$voice
             所有角色都以善意、尊重和溫和陪伴為底色；玩笑不能貶低、威脅或懲罰玩家。
             回應規則：
-            1. 先直接回答本回合玩家問題，接著才補角色感受。若是事件行動，先回應本次已提交事件。
+            1. 先直接回答本回合玩家問題，接著才補角色感受。若是事件行動，先回應本次已提交事件。詢問意見時只提出看法或建議，不得聲稱已替玩家選擇或執行。
             2. 已提交結果是現在發生的事；記憶只作背景，不能重演成現在。當前位置與結局優先於過去旅行計畫。
             3. 只根據自己的可見證據回答往事與偏好。沒有相關證據就坦白不知道並澄清；不要拿其他約定填空。
             4. 更正後的記憶是目前有效版本；記憶的類型、來源、更新次序僅供判讀，不要把欄位讀給玩家聽。
@@ -92,7 +115,7 @@ class SpringStoryModel(private val liveClient: ChatClient?, override val mode: S
             }
     }
 
-    private fun <T : Any> callTyped(client: ChatClient, system: String, user: String, converter: BeanOutputConverter<T>, budget: TurnBudget, knowledge: ReadOnlyKnowledge, validate: (T) -> Unit = {}): T {
+    private fun <T : Any> callTyped(client: ChatClient, system: String, user: String, converter: BeanOutputConverter<T>, budget: TurnBudget, knowledge: ReadOnlyKnowledge, repairInstruction: String = "上一輪未通過格式或演出規則檢查。請重新確認 JSON 格式、溫和語氣，直接回答證據中的偏好或表示沒有記憶；回應現在位置與選擇的行動，不得聲稱準備未記錄的飲品、物品或筆記本。", validate: (T) -> Unit = {}): T {
         var last: Exception? = null
         var repair = ""
         repeat(2) {
@@ -105,7 +128,7 @@ class SpringStoryModel(private val liveClient: ChatClient?, override val mode: S
             try { return future.get(budget.remainingMs().coerceAtLeast(1), TimeUnit.MILLISECONDS) }
             catch (e: Exception) {
                 future.cancel(true); last = e
-                repair = "\n上一輪未通過格式或演出規則檢查。請重新確認 JSON 格式、溫和語氣，直接回答證據中的偏好或表示沒有記憶；回應現在位置與選擇的行動，不得聲稱準備未記錄的飲品、物品或筆記本。"
+                repair = "\n$repairInstruction"
                 if (budget.remainingMs() <= 0) throw e
             }
         }
