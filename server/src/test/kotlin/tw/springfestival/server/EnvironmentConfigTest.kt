@@ -12,7 +12,8 @@ import java.nio.file.Path
 import kotlin.io.path.writeText
 
 class EnvironmentConfigTest {
-    @TempDir lateinit var directory: Path
+    @TempDir
+    lateinit var directory: Path
 
     @Configuration(proxyBeanMethods = false)
     class Config
@@ -21,13 +22,18 @@ class EnvironmentConfigTest {
         SpringApplicationBuilder(Config::class.java)
             .web(WebApplicationType.NONE)
             .environment(StandardEnvironment().apply {
-                propertySources.replace(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME,
-                    MapPropertySource(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME, environmentValues))
+                propertySources.replace(
+                    StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME,
+                    MapPropertySource(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME, environmentValues)
+                )
             })
-            .run("--spring.config.import=optional:file:${directory.resolve(".env")}[.properties]",
-                "--spring.main.banner-mode=off", *args)
+            .run(
+                "--spring.config.import=optional:file:${directory.resolve(".env")}[.properties]",
+                "--spring.main.banner-mode=off", *args
+            )
 
-    @Test fun `missing env keeps offline defaults`() {
+    @Test
+    fun `missing env keeps offline defaults`() {
         open().use {
             assertEquals("offline", it.environment.getProperty("world.mode"))
             assertEquals("", it.environment.getProperty("world.api-key"))
@@ -36,8 +42,10 @@ class EnvironmentConfigTest {
         }
     }
 
-    @Test fun `env loads connection settings and preserves JDBC semicolon`() {
-        directory.resolve(".env").writeText("""
+    @Test
+    fun `env loads connection settings and preserves JDBC semicolon`() {
+        directory.resolve(".env").writeText(
+            """
             # Sample values only
             WORLD_MODE=live
             WORLD_MODEL=sample-model
@@ -46,7 +54,8 @@ class EnvironmentConfigTest {
             OPENAI_REASONING_EFFORT=none
             PORT=8099
             WORLD_DATABASE_URL=jdbc:h2:mem:dotenv;DB_CLOSE_DELAY=-1
-        """.trimIndent())
+        """.trimIndent()
+        )
         open().use {
             val env = it.environment
             assertEquals("live", env.getProperty("world.mode"))
@@ -59,13 +68,16 @@ class EnvironmentConfigTest {
         }
     }
 
-    @Test fun `environment overrides env file and command line overrides environment`() {
+    @Test
+    fun `environment overrides env file and command line overrides environment`() {
         directory.resolve(".env").writeText("WORLD_MODEL=file-model\nOPENAI_API_KEY=file-key\n")
         open(mapOf("WORLD_MODEL" to "environment-model")).use {
             assertEquals("environment-model", it.environment.getProperty("world.model"))
         }
-        open(mapOf("WORLD_MODEL" to "environment-model", "OPENAI_API_KEY" to "environment-key"),
-            "--world.model=argument-model").use {
+        open(
+            mapOf("WORLD_MODEL" to "environment-model", "OPENAI_API_KEY" to "environment-key"),
+            "--world.model=argument-model"
+        ).use {
             assertEquals("argument-model", it.environment.getProperty("world.model"))
             assertEquals("environment-key", it.environment.getProperty("world.api-key"))
         }

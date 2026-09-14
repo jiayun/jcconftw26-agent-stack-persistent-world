@@ -1,5 +1,5 @@
 name: 驗證遊戲與協定
-on: [push, pull_request]
+on: [ push, pull_request ]
 permissions:
   contents: read
 jobs:

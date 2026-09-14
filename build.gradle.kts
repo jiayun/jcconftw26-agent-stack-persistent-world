@@ -7,7 +7,13 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     group = "tw.springfestival"
     version = "0.1.0"
-    extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> { jvmToolchain(21); compilerOptions { javaParameters.set(true) } }
+    extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+        jvmToolchain(21); compilerOptions {
+        javaParameters.set(
+            true
+        )
+    }
+    }
     dependencyLocking { lockAllConfigurations() }
     tasks.withType<Test>().configureEach { useJUnitPlatform() }
     dependencies {

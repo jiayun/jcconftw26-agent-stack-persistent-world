@@ -1,26 +1,39 @@
 package tw.springfestival.ai
 
-import org.springframework.ai.tool.annotation.Tool
 import org.springframework.ai.chat.client.ChatClientRequest
 import org.springframework.ai.chat.client.ChatClientResponse
 import org.springframework.ai.chat.client.advisor.api.CallAdvisor
 import org.springframework.ai.chat.client.advisor.api.CallAdvisorChain
+import org.springframework.ai.tool.annotation.Tool
 import tw.springfestival.application.TurnBudget
 import tw.springfestival.domain.Memory
 import tw.springfestival.domain.MemoryRecall
 
-class ReadOnlyKnowledge(private val publicScene: String, memories: List<Memory>, private val viewer: String, private val budget: TurnBudget) {
+class ReadOnlyKnowledge(
+    private val publicScene: String,
+    memories: List<Memory>,
+    private val viewer: String,
+    private val budget: TurnBudget
+) {
     private val visible = memories.filter { viewer in it.knownBy }
+
     @Tool(name = "read_public_scene", description = "唯讀：查閱本回合已提交的公開場景，不可更新世界。")
-    fun scene(): String { budget.tool(); return publicScene }
+    fun scene(): String {
+        budget.tool(); return publicScene
+    }
+
     @Tool(name = "read_known_memories", description = "唯讀：查詢此角色已知記憶，最多六筆並附來源。不能指定其他角色。")
     fun memories(query: String): List<Memory> {
         budget.tool(); require(query.length <= 2000)
         return MemoryRecall.select(visible, viewer, query)
     }
+
     @Tool(name = "read_known_events", description = "唯讀：列出此角色已知記憶的事件來源，不包含尚未揭露的作者事件。")
-    fun events(): List<String> { budget.tool(); return visible.map { it.sourceId }.distinct().take(6) }
+    fun events(): List<String> {
+        budget.tool(); return visible.map { it.sourceId }.distinct().take(6)
+    }
 }
+
 // 位於工具迴圈之後、模型之前，連工具續回合也會逐次計數。
 class BudgetAdvisor(private val budget: TurnBudget) : CallAdvisor {
     override fun getName() = "world-turn-model-budget"

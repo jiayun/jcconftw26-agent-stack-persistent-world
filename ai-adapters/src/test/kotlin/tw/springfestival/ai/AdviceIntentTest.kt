@@ -3,11 +3,14 @@ package tw.springfestival.ai
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.ai.chat.client.ChatClient
-import org.springframework.ai.chat.model.*
 import org.springframework.ai.chat.messages.AssistantMessage
+import org.springframework.ai.chat.model.ChatModel
+import org.springframework.ai.chat.model.ChatResponse
+import org.springframework.ai.chat.model.Generation
 import org.springframework.ai.chat.prompt.Prompt
 import org.springframework.ai.model.tool.ToolCallingChatOptions
-import tw.springfestival.application.*
+import tw.springfestival.application.TurnBudget
+import tw.springfestival.application.TurnWork
 import tw.springfestival.domain.*
 
 class AdviceIntentTest {
@@ -19,15 +22,30 @@ class AdviceIntentTest {
             return ChatResponse(listOf(Generation(AssistantMessage(replies[(prompts.size - 1).coerceAtMost(replies.lastIndex)]))))
         }
     }
+
     private val rules = WorldRules(emptyList())
     private val world = World("advice", "詢問意見", 26)
     private fun model(fake: Replies) = SpringStoryModel(ChatClient.create(fake), "live")
-    private fun run(fake: Replies, command: TurnCommand = TurnCommand("req", 0, text = "Elia 你說怎麼辦？")): TurnResult =
-        KoogTurnWorkflow(rules, model(fake), EmbabelNpcPlanner()).execute(TurnWork("turn", world, command)) { outcome, _ -> outcome }
+    private fun run(
+        fake: Replies,
+        command: TurnCommand = TurnCommand("req", 0, text = "Elia 你說怎麼辦？")
+    ): TurnResult =
+        KoogTurnWorkflow(rules, model(fake), EmbabelNpcPlanner()).execute(
+            TurnWork(
+                "turn",
+                world,
+                command
+            )
+        ) { outcome, _ -> outcome }
 
-    @Test fun `未知角色動作與字串 null 會重試成聊天且不推進世界`() {
+    @Test
+    fun `未知角色動作與字串 null 會重試成聊天且不推進世界`() {
         for (invalid in listOf("ask_Elia", "event:missing:advice", "null", "move:UNKNOWN")) {
-            val fake = Replies("""{"actionId":"$invalid"}""", """{"actionId":"chat"}""", """{"text":"可以先聊聊你最擔心的事，再一起商量。"}""")
+            val fake = Replies(
+                """{"actionId":"$invalid"}""",
+                """{"actionId":"chat"}""",
+                """{"text":"可以先聊聊你最擔心的事，再一起商量。"}"""
+            )
             val result = run(fake)
             assertTrue(result.accepted, invalid)
             assertEquals(world.revision + 1, result.revision)
@@ -42,8 +60,13 @@ class AdviceIntentTest {
         }
     }
 
-    @Test fun `持續無效的意圖自然澄清且不改動世界`() {
-        for (invalid in listOf("""{"actionId":"Elia"}""", """{}""", """{"actionId":"rest","clarification":"要休息嗎？"}""")) {
+    @Test
+    fun `持續無效的意圖自然澄清且不改動世界`() {
+        for (invalid in listOf(
+            """{"actionId":"Elia"}""",
+            """{}""",
+            """{"actionId":"rest","clarification":"要休息嗎？"}"""
+        )) {
             val fake = Replies(invalid)
             val result = run(fake)
             assertFalse(result.accepted)
@@ -54,7 +77,8 @@ class AdviceIntentTest {
         }
     }
 
-    @Test fun `模糊指令可以回傳澄清而不自動執行`() {
+    @Test
+    fun `模糊指令可以回傳澄清而不自動執行`() {
         val fake = Replies("""{"actionId":null,"clarification":"你想讓我幫你考慮哪件事？"}""")
         val result = run(fake, TurnCommand("req", 0, text = "你替我決定吧。"))
         assertFalse(result.accepted)
@@ -63,15 +87,23 @@ class AdviceIntentTest {
         assertEquals(1, fake.prompts.size)
     }
 
-    @Test fun `合法事件與明確移動不會被一律降為聊天`() {
+    @Test
+    fun `合法事件與明確移動不會被一律降為聊天`() {
         val fake = Replies("""{"actionId":"event:choice:go"}""", """{"actionId":"move:DOCK"}""")
         val model = model(fake)
         val scene = rules.scene(world, "live").copy(suggestions = listOf(Suggestion("event:choice:go", "前去調查")))
-        assertEquals("event:choice:go", model.understand(TurnCommand("one", 0, text = "我們去調查吧。"), scene, TurnBudget()).actionId)
-        assertEquals("move:DOCK", model.understand(TurnCommand("two", 0, text = "去渡口吧。"), scene, TurnBudget()).actionId)
+        assertEquals(
+            "event:choice:go",
+            model.understand(TurnCommand("one", 0, text = "我們去調查吧。"), scene, TurnBudget()).actionId
+        )
+        assertEquals(
+            "move:DOCK",
+            model.understand(TurnCommand("two", 0, text = "去渡口吧。"), scene, TurnBudget()).actionId
+        )
     }
 
-    @Test fun `移動條件與過期按鈕仍由世界拒絕`() {
+    @Test
+    fun `移動條件與過期按鈕仍由世界拒絕`() {
         val fake = Replies("""{"actionId":"move:LIGHTHOUSE"}""")
         val result = run(fake, TurnCommand("req", 0, text = "去北方星燈台吧。"))
         assertFalse(result.accepted)

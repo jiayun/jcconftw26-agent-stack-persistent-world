@@ -1,22 +1,24 @@
 # 安裝、設定與資料保存
 
-使用 JDK 21；以 `java -version` 確認。Gradle Wrapper 固定 9.0.0，Kotlin 編譯器固定 2.3.10；建置會明確要求 Java toolchain 21，不會把本機其他版本默默當成相容版本。
+使用 JDK 21；以 `java -version` 確認。Gradle Wrapper 固定 9.0.0，Kotlin 編譯器固定 2.3.10；建置會明確要求 Java toolchain
+21，不會把本機其他版本默默當成相容版本。
 
-前端使用 Node.js 22.12 以上。先 `cd frontend && npm ci`，再回根目錄執行 `./gradlew :server:bootJar`。產物為 `server/build/libs/server-0.1.0.jar`，用 `java -jar` 啟動。Windows 可使用 `gradlew.bat`。
+前端使用 Node.js 22.12 以上。先 `cd frontend && npm ci`，再回根目錄執行 `./gradlew :server:bootJar`。產物為
+`server/build/libs/server-0.1.0.jar`，用 `java -jar` 啟動。Windows 可使用 `gradlew.bat`。
 
 ## 環境設定
 
-| 名稱 | 預設 | 說明 |
-| --- | --- | --- |
-| `WORLD_MODE` | `offline` | `offline` 或 `live` |
-| `WORLD_MODEL` | 空白 | live 必填的 OpenAI 模型 ID |
-| `OPENAI_API_KEY` | 空白 | live 必填；不寫入 repo、存檔、MCP 工具參數 |
-| `OPENAI_BASE_URL` | `https://api.openai.com/v1` | OpenAI 或相容 API 根網址，包含版本路徑，不含 `/chat/completions` |
-| `OPENAI_REASONING_EFFORT` | 空白 | 選填；空白不傳參數。Ollama Qwen 3.5 的短篇敘事可設 `none`，其他值依模型支援情形使用 |
-| `WORLD_DATABASE_URL` | `jdbc:h2:file:./data/spring-festival;DB_CLOSE_ON_EXIT=FALSE` | H2 file JDBC URL |
-| `WORLD_MCP_ENABLED` | `false` | 啟用同程序 `/mcp` Streamable HTTP |
-| `WORLD_DEBUG` | `false` | 顯示開發觀察工具 |
-| `PORT` | `8080` | HTTP 與 MCP 共用連接埠 |
+| 名稱                      | 預設                                                         | 說明                                                                                |
+|---------------------------|--------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| `WORLD_MODE`              | `offline`                                                    | `offline` 或 `live`                                                                 |
+| `WORLD_MODEL`             | 空白                                                         | live 必填的 OpenAI 模型 ID                                                          |
+| `OPENAI_API_KEY`          | 空白                                                         | live 必填；不寫入 repo、存檔、MCP 工具參數                                          |
+| `OPENAI_BASE_URL`         | `https://api.openai.com/v1`                                  | OpenAI 或相容 API 根網址，包含版本路徑，不含 `/chat/completions`                    |
+| `OPENAI_REASONING_EFFORT` | 空白                                                         | 選填；空白不傳參數。Ollama Qwen 3.5 的短篇敘事可設 `none`，其他值依模型支援情形使用 |
+| `WORLD_DATABASE_URL`      | `jdbc:h2:file:./data/spring-festival;DB_CLOSE_ON_EXIT=FALSE` | H2 file JDBC URL                                                                    |
+| `WORLD_MCP_ENABLED`       | `false`                                                      | 啟用同程序 `/mcp` Streamable HTTP                                                   |
+| `WORLD_DEBUG`             | `false`                                                      | 顯示開發觀察工具                                                                    |
+| `PORT`                    | `8080`                                                       | HTTP 與 MCP 共用連接埠                                                              |
 
 在 repo 根目錄複製 [設定範例](../.env.example)：
 
@@ -33,25 +35,33 @@ OPENAI_API_KEY=REPLACE_WITH_API_KEY
 OPENAI_BASE_URL=https://api.openai.com/v1
 ```
 
-若使用 OpenAI 相容服務，填入該服務的 API 根網址與模型 ID；服務需支援 Chat Completions 和工具呼叫。相容服務的實際模型行為仍需驗證。本機服務的網址例如 `http://127.0.0.1:1234/v1`；若服務不要求驗證，仍需填入非空的 API key（例如 `local`），供客戶端初始化。
+若使用 OpenAI 相容服務，填入該服務的 API 根網址與模型 ID；服務需支援 Chat Completions 和工具呼叫。相容服務的實際模型行為仍需驗證。本機服務的網址例如
+`http://127.0.0.1:1234/v1`；若服務不要求驗證，仍需填入非空的 API key（例如 `local`），供客戶端初始化。
 
-後端透過 Spring 設定載入器讀取**啟動目錄**的 `.env`；`./scripts/start.sh`、`./gradlew :server:bootRun` 都使用 repo 根目錄。直接啟動 jar 或從 IDE 執行時，也請把工作目錄設為 repo 根目錄：
+後端透過 Spring 設定載入器讀取 **啟動目錄**的 `.env`；`./scripts/start.sh`、`./gradlew :server:bootRun` 都使用 repo
+根目錄。直接啟動 jar 或從 IDE 執行時，也請把工作目錄設為 repo 根目錄：
 
 ```sh
 java -jar server/build/libs/server-0.1.0.jar
 ```
 
-不需要 `source .env`。格式為 `KEY=value`，使用 UTF-8、不要加引號或 `export`；註解以 `#` 開頭並獨立一行（檔案採 properties 語法，不執行 shell 指令）。設定優先順序是命令列參數 > 系統環境變數 > `.env` > 程式預設值。修改後需重啟，缺少 `.env` 仍可使用預設離線模式。`.env` 與 `.env.*` 已被 Git 忽略，僅保留 `.env.example` 範例；不要在範例填入真實金鑰。這些設定由後端讀取，不會打包到前端。
+不需要 `source .env`。格式為 `KEY=value`，使用 UTF-8、不要加引號或 `export`；註解以 `#` 開頭並獨立一行（檔案採 properties
+語法，不執行 shell 指令）。設定優先順序是命令列參數 > 系統環境變數 > `.env` > 程式預設值。修改後需重啟，缺少 `.env`
+仍可使用預設離線模式。`.env` 與 `.env.*` 已被 Git 忽略，僅保留 `.env.example` 範例；不要在範例填入真實金鑰。這些設定由後端讀取，不會打包到前端。
 
-live 缺少任一設定會拒絕啟動並說明原因。離線模式涵蓋全部作者事件的合法分支、移動、休息、回想約定與「我喜歡……」的明確偏好；不宣稱能理解任意自由文字。兩個模式都真正執行 Embabel planner、Koog graph、domain 與 H2。
+live 缺少任一設定會拒絕啟動並說明原因。離線模式涵蓋全部作者事件的合法分支、移動、休息、回想約定與「我喜歡……」的明確偏好；不宣稱能理解任意自由文字。兩個模式都真正執行
+Embabel planner、Koog graph、domain 與 H2。
 
 ## 資料與失敗
 
-H2、Flyway 與回合紀錄都保存在本機。live 會將輸入、場景與角色已過濾的記憶傳給設定的模型服務；離線不傳送。工具不開放任意世界 patch。自然語言仍可能不一致，請以畫面中的結構化事實與日誌為準。
+H2、Flyway 與回合紀錄都保存在本機。live 會將輸入、場景與角色已過濾的記憶傳給設定的模型服務；離線不傳送。工具不開放任意世界
+patch。自然語言仍可能不一致，請以畫面中的結構化事實與日誌為準。
 
-備份優先使用設定頁匯出。若要備份整個 H2 檔案，先停止程序，再複製 `data/`。匯入建立新 UUID 存檔，原存檔不變，也不帶入既有 MCP 權杖或執行中的回合。記憶更正不逆轉已發生的故事。
+備份優先使用設定頁匯出。若要備份整個 H2 檔案，先停止程序，再複製 `data/`。匯入建立新 UUID 存檔，原存檔不變，也不帶入既有 MCP
+權杖或執行中的回合。記憶更正不逆轉已發生的故事。
 
-收到 revision 衝突時，重新讀取場景再選新行動；不要自動替舊行動改 revision。若網路中斷，畫面的「重新查詢原回合」會使用保存的 request ID 或 turn ID。
+收到 revision 衝突時，重新讀取場景再選新行動；不要自動替舊行動改 revision。若網路中斷，畫面的「重新查詢原回合」會使用保存的
+request ID 或 turn ID。
 
 ## 疑難排解
 

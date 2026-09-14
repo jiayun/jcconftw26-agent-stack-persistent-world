@@ -4,7 +4,7 @@
 
 先建立 Web 存檔，再以 `WORLD_MCP_ENABLED=true` 啟動遊戲。設定頁「建立連線權杖」只授權目前存檔，權杖只顯示一次。可以為不同存檔建立不同權杖，也可以分別撤銷。
 
-客戶端必須支援 Streamable HTTP 與自訂 header；下面是**連線參數參考**，不是所有客戶端共用的設定檔 schema：
+客戶端必須支援 Streamable HTTP 與自訂 header；下面是 **連線參數參考**，不是所有客戶端共用的設定檔 schema：
 
 ```json
 {
@@ -14,7 +14,8 @@
 }
 ```
 
-不要將權杖放入模型提示、工具參數、issue 或紀錄。此版沒有帳號系統；存檔管理由 Web 處理。MCP 權杖不授權任意匯出、刪除、重設、好感修改或資料 patch。
+不要將權杖放入模型提示、工具參數、issue 或紀錄。此版沒有帳號系統；存檔管理由 Web 處理。MCP 權杖不授權任意匯出、刪除、重設、好感修改或資料
+patch。
 
 ## 一次跨入口操作
 
@@ -38,15 +39,16 @@
 
 ## 五個工具
 
-| 工具 | 參數 | 契約 |
-| --- | --- | --- |
-| `get_current_scene` | 無 | 授權存檔場景、revision、在場角色、2–4 個合法建議與公開事實 |
-| `get_story_journal` | 可選整數 `cursor` | 每頁 20 筆已知事件、公開承諾與 nextCursor |
-| `search_known_memories` | `query` | 玩家已知記憶，最多六筆，包含 sourceId |
-| `submit_player_turn` | `requestId`、`expectedRevision`、`text`／`suggestionId` 擇一 | 持久化請求後立即回傳 turnId；共用 Web 用例 |
-| `get_turn_result` | `turnId` | 相同授權存檔的進度及完整保存結果 |
+| 工具                    | 參數                                                         | 契約                                                       |
+|-------------------------|--------------------------------------------------------------|------------------------------------------------------------|
+| `get_current_scene`     | 無                                                           | 授權存檔場景、revision、在場角色、2–4 個合法建議與公開事實 |
+| `get_story_journal`     | 可選整數 `cursor`                                            | 每頁 20 筆已知事件、公開承諾與 nextCursor                  |
+| `search_known_memories` | `query`                                                      | 玩家已知記憶，最多六筆，包含 sourceId                      |
+| `submit_player_turn`    | `requestId`、`expectedRevision`、`text`／`suggestionId` 擇一 | 持久化請求後立即回傳 turnId；共用 Web 用例                 |
+| `get_turn_result`       | `turnId`                                                     | 相同授權存檔的進度及完整保存結果                           |
 
-工具參數不接受 save ID、角色 ID、視角或任意 patch。唯讀工具不推進時段或 revision。不回傳作者未公開事件、NPC 秘密、開發 trace 或原始世界快照。
+工具參數不接受 save ID、角色 ID、視角或任意 patch。唯讀工具不推進時段或 revision。不回傳作者未公開事件、NPC 秘密、開發 trace
+或原始世界快照。
 
 ## 重送、中斷與錯誤
 
@@ -58,8 +60,10 @@
 - 無效或撤銷權杖：HTTP 401。跨存檔 turn ID 回 `NOT_FOUND`；不揭露另一存檔是否存在。
 - 非法工具欄位：`INVALID_INPUT`。世界不會被改寫。
 
-測試中的客戶端是 MCP Java SDK 2.0.0 的 `HttpClientStreamableHttpTransport`，真實完成 initialize、tools/list 與 tools/call。**實際外部 AI 客戶端的產品／版本／操作紀錄尚待人工驗收**，不能將 SDK 測試冒充該項完成。
+測試中的客戶端是 MCP Java SDK 2.0.0 的 `HttpClientStreamableHttpTransport`，真實完成 initialize、tools/list 與 tools/call。
+**實際外部 AI 客戶端的產品／版本／操作紀錄尚待人工驗收**，不能將 SDK 測試冒充該項完成。
 
 ## 與未來世界資料館的差別
 
-本版是「遊戲世界 MCP Server」，外部客戶端透過它遊玩現有存檔。未來可以增加獨立的地方文獻 MCP Server，由遊戲的 Spring AI MCP Client 查資料；那是內容來源擴充，不在本版範圍。
+本版是「遊戲世界 MCP Server」，外部客戶端透過它遊玩現有存檔。未來可以增加獨立的地方文獻 MCP Server，由遊戲的 Spring AI MCP
+Client 查資料；那是內容來源擴充，不在本版範圍。

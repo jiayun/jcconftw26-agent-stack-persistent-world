@@ -2,7 +2,8 @@
 
 ## 新增事件
 
-編輯 `content/events.yaml`，每個事件須有全域唯一 ID、category、title、place、text、participants 與 2–4 個 branches。category 為 main／character／life／memory／atmosphere；地點與 Place enum 一致。
+編輯 `content/events.yaml`，每個事件須有全域唯一 ID、category、title、place、text、participants 與 2–4 個 branches。category 為
+main／character／life／memory／atmosphere；地點與 Place enum 一致。
 
 ```yaml
 - id: example_cup
@@ -28,23 +29,29 @@
       text: 店主說，這個杯子已經陪過許多春天。
 ```
 
-`chapter` 精確限定章節，`minChapter` 設定下限，`require` 全部成立才觸發，`exclude` 任一成立就互斥。`once` 與 `cooldown` 控制重複；同分以 seed 決定，未見過事件與等待時間影響優先度。`hooks` 僅引用存在的作者事件，不直接跳過世界條件。
+`chapter` 精確限定章節，`minChapter` 設定下限，`require` 全部成立才觸發，`exclude` 任一成立就互斥。`once` 與 `cooldown`
+控制重複；同分以 seed 決定，未見過事件與等待時間影響優先度。`hooks` 僅引用存在的作者事件，不直接跳過世界條件。
 
-branch 的 flags、skill、character、trust、closeness、memory、layer、pinned、ending 是明確效果。技能只記錄事件 ID，不能靠同一事件反覆升級。`listen` 保留稍後協助的機會，不標記角色事件完成。主線完成以 `advanceChapter` 控制；已完成主線不再符合章節。
+branch 的 flags、skill、character、trust、closeness、memory、layer、pinned、ending 是明確效果。技能只記錄事件 ID，不能靠同一事件反覆升級。
+`listen` 保留稍後協助的機會，不標記角色事件完成。主線完成以 `advanceChapter` 控制；已完成主線不再符合章節。
 
 新增內容時同步調整 content version、內容數量測試與可達性測試。不要只為讓測試通過刪除驗收斷言；測試須涵蓋新增前置條件造成的卡關。
 
 ## 角色與技能
 
-角色公開語氣及私密設定在 `content/characters.yaml`。私密段落是作者資料，不能整份送給不知情角色。角色模型上下文只使用明確聲線與自身 knownBy 記憶。新增角色需同時調整 World 初始關係、日程、事件參與者與 UI 的人物卡；加上「其他角色不知道其秘密」測試。
+角色公開語氣及私密設定在 `content/characters.yaml`。私密段落是作者資料，不能整份送給不知情角色。角色模型上下文只使用明確聲線與自身
+knownBy 記憶。新增角色需同時調整 World 初始關係、日程、事件參與者與 UI 的人物卡；加上「其他角色不知道其秘密」測試。
 
-新增技能需調整 World、WorldRules 的允許清單、匯入驗證與 UI 名稱。每項技能的不同 evidence 數量決定初識／熟悉／拿手。後期分流修復會反映累積的生活練習，結局回收早期笑話或熱湯。
+新增技能需調整 World、WorldRules 的允許清單、匯入驗證與 UI 名稱。每項技能的不同 evidence
+數量決定初識／熟悉／拿手。後期分流修復會反映累積的生活練習，結局回收早期笑話或熱湯。
 
 ## 新增 Embabel action
 
-在 `EmbabelNpcPlanner.planGoal` 對應目標的 actions 集合加入 `ConditionAction`，定義 preconditions、effects 與 cost。不要先用 if/else 排好完整路徑，再把清單叫作 planner 結果。
+在 `EmbabelNpcPlanner.planGoal` 對應目標的 actions 集合加入 `ConditionAction`，定義 preconditions、effects 與 cost。不要先用
+if/else 排好完整路徑，再把清單叫作 planner 結果。
 
-每個 goal 的測試須至少改變一項真實條件，驗證 planner 選出的 action IDs 確實改變。若 action 會提交 NPC 活動，另在 `WorldRules.advance` 註冊允許動作與目前條件。NPC 活動不能替玩家買票、出發或答應邀約。
+每個 goal 的測試須至少改變一項真實條件，驗證 planner 選出的 action IDs 確實改變。若 action 會提交 NPC 活動，另在
+`WorldRules.advance` 註冊允許動作與目前條件。NPC 活動不能替玩家買票、出發或答應邀約。
 
 ## 台灣繁體中文規範
 
@@ -54,10 +61,12 @@ branch 的 flags、skill、character、trust、closeness、memory、layer、pinn
 
 ## 驗證入口
 
-`./gradlew test` 會載入 YAML、驗證 Kotlin schema、ID／hook 引用、類別數量與主線可達性。修改 API 後執行 MCP 交握與跨入口測試。修改前端後執行 `npm run build`，並人工檢查桌面及手機版、鍵盤焦點、錯誤與忙碌狀態。
+`./gradlew test` 會載入 YAML、驗證 Kotlin schema、ID／hook 引用、類別數量與主線可達性。修改 API 後執行 MCP 交握與跨入口測試。修改前端後執行
+`npm run build`，並人工檢查桌面及手機版、鍵盤焦點、錯誤與忙碌狀態。
 
 ## 新增記憶主題與角色範例
 
-主題詞彙集中於 domain 的 `MemoryRecall`，新增別名時需同時測試「應命中」與「無關問題不命中」。飲食偏好的相同主題視為目前偏好版本，設定頁更正／刪除會清除同主題舊副本；要表達多個並存偏好，可放在同一筆完整敘述。不要把聊天中的假設、問題或玩家宣稱直接升格成事實。
+主題詞彙集中於 domain 的 `MemoryRecall`
+，新增別名時需同時測試「應命中」與「無關問題不命中」。飲食偏好的相同主題視為目前偏好版本，設定頁更正／刪除會清除同主題舊副本；要表達多個並存偏好，可放在同一筆完整敘述。不要把聊天中的假設、問題或玩家宣稱直接升格成事實。
 
 角色範例只提供語氣，不是世界記憶。避免用「嘴硬」等單一標籤代替可觀察的說話行為；寫清楚如何關心、如何開玩笑、哪些說法會傷害陪伴感。事件標題可能是文學比喻，不可把標題當成角色說過的話。
