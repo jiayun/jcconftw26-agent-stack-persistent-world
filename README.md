@@ -1,6 +1,8 @@
 # 春祭之約｜JCConfTW26 Agent Stack Supplemental Project
 
-JCConfTW26 Agent Stack 會後補充專案：以 Kotlin、Spring AI、Embabel、Koog 與 MCP 打造會記得承諾、延續共同經歷的單人敘事遊戲。
+JCConfTW26 Agent Stack 會後補充專案：以可持續保存的單人敘事世界，展示 Java／Kotlin 團隊如何依需求組合 Agent Stack，讓角色記得承諾，也讓玩家的選擇留下可查證的結果。
+
+本專案以 Kotlin 實作，將模型理解與演出、角色目標規劃、回合流程、世界裁決及持久化恢復分成明確責任。讀者可以從封橋改道、非法行動被拒絕，以及中斷後續作等情境，理解每一層解決的問題與引入成本，再判斷自己的應用需要哪些能力。
 
 你暫住河畔小城的旅館，與 Elia、Miro 一起準備春祭。星燈亮錯了拍子，北橋突然封閉，而「祭典結束後一起去北方」的約定，還等著你們一起回答。
 
@@ -63,6 +65,16 @@ WORLD_MCP_ENABLED=true java -jar server/build/libs/server-0.1.0.jar
 
 ## 架構導讀
 
+| 遊戲需求 | 架構決策 | 可觀察的結果 |
+| --- | --- | --- |
+| 理解玩家輸入、生成角色台詞 | Spring AI 統一模型邊界，domain 驗證合法性 | 玩家宣稱已有船票，不會因此取得物品或直接出發 |
+| 封橋後重新尋找旅行方案 | Embabel 根據目標與條件搜尋 action path | 橋路不可行時，改查渡船或提出延期 |
+| 模糊輸入需澄清、演出失敗需備援 | Koog 明確表達回合分支 | 澄清時跳過規劃與裁決；演出失敗使用同筆作者文字 |
+| 重啟後續作、重送不重複效果 | 應用與 JDBC 交易保存請求、世界及結果 | 已提交回合只補演出，同存檔、相同 request ID 與內容取回原回合 |
+| Web 與外部客戶端延續同一存檔 | MCP 提供工具介面，伺服器依權杖另行授權 | 兩個入口共用回合服務，客戶端不能自行指定其他存檔 |
+
+這裡同時採用 Spring AI、Embabel 與 Koog，讓讀者能在同一個遊戲中觀察三種責任及其協作成本。只有短回合模型互動時，可以先從 Spring AI 與應用規則開始；需要依條件搜尋行動路徑或明確管理流程分支時，再評估規劃與 graph。具體取捨見 [架構決策](docs/adr/001-framework-and-world-boundaries.md)。
+
 ```text
 React → HTTP ──┐
               ├→ GameService → Koog graph → Spring AI / Embabel → domain → JDBC / H2
@@ -80,6 +92,10 @@ MCP client ───┘                         ↓ 已提交結果
 | `content` | 台灣繁體中文角色聖經與 44 個 YAML 事件 |
 
 [一次回合的架構](docs/architecture.md) · [架構決策](docs/adr/001-framework-and-world-boundaries.md) · [內容與擴充指南](docs/development.md)
+
+角色記憶保存「知道什麼」，回合紀錄保存「執行到哪裡、哪些效果已提交」。本版由應用與 H2 支援本機單程序的回合恢復；恢復情境與限制見 [測試與復原](docs/testing.md)。角色都在同一服務內運作，沒有獨立部署 agent 的協作需求，因此未引入 A2A。
+
+開發觀察工具與回歸測試用來檢查分支、記憶來源、模型用量及世界不變量。本專案的驗證範圍是本機單人應用；公開部署的身分治理、維運與完整人工模型品質驗收仍須另行評估，三框架共同執行成功不等於完成 production 驗證。
 
 ## 開發與測試
 
